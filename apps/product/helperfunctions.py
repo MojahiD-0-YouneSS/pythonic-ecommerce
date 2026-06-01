@@ -1,0 +1,1 @@
+# product helperfunctions.py

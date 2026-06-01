@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB = pythonic_ecommerce_app
+POSTGRES_USER=YAchHVukfyeQHrJazIgiBgrIrYaRdQBN
+POSTGRES_PASSWORD=NrEpAuiAgoOSnKg2L3VlgS9IHEauEZqS7qZYuyJtozkQF8HQJeQcDNOARNQfV8Cs

@@ -1,0 +1,16 @@
+services:
+  docs:
+    image: pythonic_ecommerce_app_local_docs
+    container_name: pythonic_ecommerce_app_local_docs
+    build:
+      context: .
+      dockerfile: ./devops/compose/local/docs/Dockerfile
+    env_file:
+      - ./.envs/.local/.django
+    volumes:
+      - ./docs:/docs:z
+      - ./config:/app/config:z
+      - ./pythonic_ecommerce_app:/app/pythonic_ecommerce_app:z
+    ports:
+      - '9000:9000'
+    command: /start-docs

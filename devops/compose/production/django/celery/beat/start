@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+exec celery -A pythonic_ecommerce.celery_app beat -l INFO
