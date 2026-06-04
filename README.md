@@ -18,14 +18,16 @@ The primary objective of this architecture is **uncompromised modularity**. In s
 
 This platform completely decouples the **Persistence layer**, the **Business Domain layer**, and the **User Interface layer**:
 
-```mermaid
+``` mermaid
+
 graph TD
+
     %% User/Browser Interactions
     Browser[🌐 User Browser] -->|HTTP Request / HTMX Ajax| Nginx[🔀 Reverse Proxy / Traefik]
     Nginx -->|Route Request| DjangoWSGI[🚀 Gunicorn / Django WSGI]
     
     %% Middleware Processing
-    subgraph Django Pipeline [Django Request & Middleware Pipeline]
+    subgraph DjangoPipeline ["Django Request & Middleware Pipeline"]
         DjangoWSGI --> GlobalSession[1. GlobalSessionMiddleware<br>Injects session context]
         GlobalSession --> CsrfContext[2. CsrfContextMiddleware<br>Hydrates Probo UI global token]
         CsrfContext --> EntryMiddleware[3. EntryMiddleware<br>Hydrates Domain Master Entry]
@@ -35,7 +37,7 @@ graph TD
     EntryMiddleware -->|Hydrated request.django_abstract_entry| View[📋 Django Domain View]
 
     %% Domain DDD Layer
-    subgraph Business Logic Layer [Domain-Driven Business Layer (django-abstract)]
+    subgraph BusinessLogicLayer ["Domain-Driven Business Layer (django-abstract)"]
         View -->|Injects context| Dependency[💉 App Dependency Container<br>Resolves Selectors & Creators]
         View -->|Executes mutating action| Service[🛠️ Model Service / Bare Service]
         Service -->|Validation checks| Validator[🔍 Service Validator<br>Asserts business rules & boundaries]
@@ -46,7 +48,7 @@ graph TD
     end
 
     %% UI Rendering Layer
-    subgraph Presentation Layer [Component-Driven Python UI (probo-ui)]
+    subgraph PresentationLayer ["Component-Driven Python UI (probo-ui)"]
         View -->|Supplies domain dictionary| Page[📄 Probo Page Component]
         Page -->|Assembles| Component[🧩 UI Components & Cards]
         Component -->|SSDOM Manipulation| Element[🏷️ Python HTML Elements]
@@ -61,6 +63,7 @@ graph TD
     Service -->|Dispatches async event| RedisBroker[📬 Redis Queue / Broker]
     RedisBroker -->|Consume task| CeleryWorker[⚙️ Celery Workers]
     CeleryWorker -->|Mutate state| DB
+
 ```
 
 ---
