@@ -22,7 +22,8 @@ class CsrfContextMiddleware:
 
         # 3. Securely inject the token into the global UI state
         context.put("csrf_token", csrf_token)
-
+        context.put("is_admin", False if not request.user.username == 'admin_1' else True)  # Initialize is_admin based on user role
+        print(context._get_bucket())
         # 4. Continue the Django request/response pipeline
         response = self.get_response(request)
         return response

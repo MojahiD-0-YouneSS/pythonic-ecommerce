@@ -48,6 +48,7 @@ def get_client_base_template(*args,**kwargs):
     base_body = base.html_doc.find(lambda n:n.tag == 'BODY')
     ctx = get_global_context()
     user_status = ctx.get('user_auth')
+    is_admin = ctx.get("is_admin")
     if base_body:
         base_body.add(
             DIV(
@@ -57,7 +58,7 @@ def get_client_base_template(*args,**kwargs):
                 style="z-index: 1055;",
             )
         ).add(
-            ClientHeader(cart_count=ctx.get("cart_item_count", 0),user_status=user_status),
+            ClientHeader(cart_count=ctx.get("cart_item_count", 0),user_status=user_status,is_admin=is_admin),
         ).add(
             DIV(Class="container", data_ssdom_id="root-container"),
         ).add(

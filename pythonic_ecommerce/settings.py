@@ -27,7 +27,13 @@ SECRET_KEY = 'django-insecure-!l@=^ez($xsgh6lbcmk1#e#=$qiz+#df3gk!zgb-!f@ul0&5k1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not True
 
-ALLOWED_HOSTS = ["http://127.0.0.1:8000/", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "http://127.0.0.1:8000/",
+    "127.0.0.1",
+    "localhost",
+    "http://localhost:8000",
+    
+]
 
 # Correct way to do this in settings.py
 LOGIN_URL = reverse_lazy("client:login")
@@ -54,6 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

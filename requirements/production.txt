@@ -1,25 +1,11 @@
-#Core Framework
+# PRECAUTION: avoid production dependencies that aren't in development
 
-Django>=5.0
-django-abstract>=0.1.0  # Your custom DDD framework engine
-django-htmx>=1.27.0      # For HTMX support
-django-bootstrap5>=26.1      # For HTMX support
-probo-ui>=1.4.3         # Your custom UI component library
+-r base.txt
 
-#Database & Performance
+gunicorn==23.0.0  # https://github.com/benoitc/gunicorn
+psycopg[c]==3.2.6  # https://github.com/psycopg/psycopg
+sentry-sdk==2.25.1  # https://github.com/getsentry/sentry-python
 
-psycopg2-binary>=2.9.9  # PostgreSQL adapter
-redis>=5.0.1            # For caching and Celery broker
-celery>=5.3.6           # Background tasks (e.g., dashboard metrics calculation)
-
-#Security & Utilities
-
-python-dotenv>=1.0.0    # For reading .env configurations
-Pillow>=10.2.0          # Required for Django ImageFields (Banners, Posters, Products)
-django-cors-headers>=4.3.1 # If you are separating frontend from backend
-gunicorn>=21.2.0        # Production WSGI server
-
-#Useful add-ons for debugging (Optional but highly recommended)
-
-django-extensions>=3.2.3
-dj_database_url-3.1.2
+# Django
+# ------------------------------------------------------------------------------
+django-anymail[sendgrid]==13.0  # https://github.com/anymail/django-anymail

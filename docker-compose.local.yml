@@ -17,8 +17,8 @@ services:
     volumes:
       - .:/app:z
     env_file:
-      - ./.envs/.local/.django
-      - ./.envs/.local/.postgres
+      - ./devops/.envs/.local/.django
+      - ./devops/.envs/.local/.postgres
     ports:
       - '8000:8000'
     command: /start
@@ -33,7 +33,7 @@ services:
       - pythonic_ecommerce_local_postgres_data:/var/lib/postgresql/data
       - pythonic_ecommerce_local_postgres_data_backups:/backups
     env_file:
-      - ./.envs/.local/.postgres
+      - ./devops/.envs/.local/.postgres
 
   mailpit:
     image: docker.io/axllent/mailpit:latest

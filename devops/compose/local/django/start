@@ -6,4 +6,5 @@ set -o nounset
 
 
 python manage.py migrate
+python manage.py seed_db --format
 exec uvicorn pythonic_ecommerce.asgi:application --host 0.0.0.0 --reload --reload-include '*.html'

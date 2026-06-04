@@ -2,7 +2,7 @@ from probo import DIV, NAV, A, BUTTON, INPUT, SPAN, UL, LI, FOOTER, P, I
 from django.urls import reverse
 from ui.components.cart.icon import cart_icon
 
-def ClientHeader(cart_count=0,user_status=None) -> NAV:
+def ClientHeader(cart_count=0,user_status=None,is_admin=False) -> NAV:
 
     return NAV(
         DIV(
@@ -37,11 +37,24 @@ def ClientHeader(cart_count=0,user_status=None) -> NAV:
                         Class="nav-item",
                     ),
                     (
+                        str()
+                        if (user_status and not is_admin)
+                        or not user_status
+                        and not is_admin
+                        else A(
+                            "Dashboard",
+                            href=reverse("cms:admin-dashboard", kwargs={}),
+                            Class="nav-link",
+                        )
+                    ),
+                    (
                         LI(
-                            A(
-                                "Profile",
-                                href=reverse("client:profile_base", kwargs={}),
-                                Class="nav-link",
+                            (
+                                A(
+                                    "Profile",
+                                    href=reverse("client:profile_base", kwargs={}),
+                                    Class="nav-link",
+                                )
                             ),
                             Class="nav-item",
                         )

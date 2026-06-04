@@ -1,5 +1,5 @@
 from probo import DIV, NAV, A, BUTTON, I, UL, LI, H4, P, FOOTER, SPAN
-
+from django.urls import reverse
 def admin_panel(is_collapsed=False):
     # Dynamic styling for the sidebar width
     sidebar_style = "width: 80px;" if is_collapsed else "width: 260px;"
@@ -13,6 +13,10 @@ def admin_panel(is_collapsed=False):
                     I(Class="fas fa-shield-alt"), 
                     SPAN("Admin", Class=text_display)
                 , href="/cms/admin/dashboard/", Class="navbar-brand text-white text-center w-100 mb-4"),
+                A(
+                    I(Class="fas fa-shield-alt"), 
+                    SPAN("Store", Class=text_display)
+                , href=reverse("cms:home"), Class="navbar-brand text-white text-center w-100 mb-4"),
             Class="p-3"),
 
             # Navigation Links

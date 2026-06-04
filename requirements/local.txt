@@ -1,25 +1,34 @@
-#Core Framework
+-r production.txt
 
-Django>=5.0
-django-abstract>=0.1.0  # Your custom DDD framework engine
-django-htmx>=1.27.0      # For HTMX support
-django-bootstrap5>=26.1      # For HTMX support
-probo-ui>=1.4.3         # Your custom UI component library
+Werkzeug[watchdog]==3.1.3 # https://github.com/pallets/werkzeug
+ipdb==0.13.13  # https://github.com/gotcha/ipdb
+psycopg[c]==3.2.6  # https://github.com/psycopg/psycopg
+watchfiles==1.0.4  # https://github.com/samuelcolvin/watchfiles
 
-#Database & Performance
+# Testing
+# ------------------------------------------------------------------------------
+mypy==1.15.0  # https://github.com/python/mypy
+django-stubs[compatible-mypy]==5.1.3  # https://github.com/typeddjango/django-stubs
+pytest>=9.0.2  # https://github.com/pytest-dev/pytest
+pytest-sugar==1.0.0  # https://github.com/Teemu/pytest-sugar
 
-psycopg2-binary>=2.9.9  # PostgreSQL adapter
-redis>=5.0.1            # For caching and Celery broker
-celery>=5.3.6           # Background tasks (e.g., dashboard metrics calculation)
+# Documentation
+# ------------------------------------------------------------------------------
+sphinx==8.2.3 # pyup: != 8.3.0  # https://github.com/sphinx-doc/sphinx
+sphinx-autobuild==2024.10.3 # https://github.com/GaretJax/sphinx-autobuild
 
-#Security & Utilities
+# Code quality
+# ------------------------------------------------------------------------------
+ruff==0.11.4  # https://github.com/astral-sh/ruff
+coverage==7.8.0  # https://github.com/nedbat/coveragepy
+djlint==1.36.4  # https://github.com/Riverside-Healthcare/djLint
+pre-commit==4.2.0  # https://github.com/pre-commit/pre-commit
 
-python-dotenv>=1.0.0    # For reading .env configurations
-Pillow>=10.2.0          # Required for Django ImageFields (Banners, Posters, Products)
-django-cors-headers>=4.3.1 # If you are separating frontend from backend
-gunicorn>=21.2.0        # Production WSGI server
+# Django
+# ------------------------------------------------------------------------------
+factory-boy==3.3.2  # https://github.com/FactoryBoy/factory_boy
 
-#Useful add-ons for debugging (Optional but highly recommended)
-
-django-extensions>=3.2.3,
-dj_database_url-3.1.2
+django-debug-toolbar==5.1.0  # https://github.com/jazzband/django-debug-toolbar
+django-extensions==4.0  # https://github.com/django-extensions/django-extensions
+django-coverage-plugin==3.1.0  # https://github.com/nedbat/django_coverage_plugin
+pytest-django==4.11.1  # https://github.com/pytest-dev/pytest-django

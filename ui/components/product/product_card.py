@@ -35,7 +35,7 @@ def ProductCard(product_data, image=None):
                             Class="card-title fw-bolder text-center",
                         ),
                         DIV(
-                            f"${(product_data.base_price if hasattr(product_data,'base_price') else  product_data.get('price', '0.00'))})",
+                            f"${(product_data.base_price if hasattr(product_data,'base_price') else  product_data.get('base_price',product_data.get('price', '0.00')))}",
                             Class="text-center mb-3",
                         ),
                         Class="card-body p-4",
