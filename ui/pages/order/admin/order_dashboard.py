@@ -5,18 +5,25 @@ from ui.components.order.admin.active_orders import ActiveOrderCard
 from ui.components.order.admin.ready_to_diliver import ReadyToDeliverCard
 from ui.components.order.admin.listing_all import OrderListRow
 from ui.pages.base import get_management_base_template
-from apps.global_context import get_global_context
+from probo.components import Frag
 
-def OrderDashboard(orders=None):
+def OrderDashboard():
     """
     Full Order Operations Dashboard.
     orders: QuerySet of all orders.
     """
-    Context = get_global_context()
-    orders = orders or Context.get('orders', [])
     # System logic within component
-    active = [ActiveOrderCard(o) for o in orders if o.status in ['Pending', 'Processing']]
-    ready = [ReadyToDeliverCard(o) for o in orders if o.status == 'Processing' and o.payment_status == 'Paid']
+    def active_orders(**dvars)->DIV:
+        orders = dvars.get('orders',[]) or []
+        active = [Frag(ActiveOrderCard(),data_pipeline={'order':o}) for o in orders if o.status in ['Pending', 'Processing']]
+        return DIV(*active, Class="d-flex flex-wrap gap-3") if active else P("No active orders.", Class="text-muted small")
+    def ready_orders(**dvars)->DIV:
+        orders = dvars.get('orders', []) or []
+        ready = [Frag(ReadyToDeliverCard(),data_pipeline={'order':o}) for o in orders if o.status == 'Processing' and o.payment_status == 'Paid']
+        return DIV(*ready, Class="d-flex flex-column gap-2") if ready else P("Nothing to ship yet.", Class="text-muted small")
+    def order_list(**dvars)->DIV:
+        orders = dvars.get('orders',[]) or []
+        return DIV(*[Frag(OrderListRow(),data_pipeline={'order':o}) for o in (orders[:20] if orders else [])])
     return DIV(
         # Page Header
         DIV(
@@ -30,13 +37,13 @@ def OrderDashboard(orders=None):
             # Column 1: Active Handlers
             SECTION(
                 H5("Incoming & Processing", Class="mb-4 text-primary fs-6 fw-bold"),
-                DIV(*active, Class="d-flex flex-wrap gap-3") if active else P("No active orders.", Class="text-muted small"),
+                {'orders',active_orders},
                 Class="col-lg-8"
             ),
             # Column 2: Fulfillment Queue
             SECTION(
                 H5("Ready to Ship", Class="mb-4 text-success fs-6 fw-bold"),
-                DIV(*ready, Class="d-flex flex-column gap-2") if ready else P("Nothing to ship yet.", Class="text-muted small"),
+                {'orders',ready_orders},
                 Class="col-lg-4 ps-lg-4 border-start"
             ),
             Class="row mb-5"
@@ -60,7 +67,7 @@ def OrderDashboard(orders=None):
                     Class="row py-2 px-3 bg-light border rounded-top g-0"
                 ),
                 # Rows
-                *[OrderListRow(o) for o in (orders[:20] if orders else [None])],
+                {'orders',order_list},
                 Class="bg-white border rounded-bottom"
             )
         ),

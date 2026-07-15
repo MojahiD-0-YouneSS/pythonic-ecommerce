@@ -5,6 +5,7 @@ from django_abstract.utilities import (
     AdminOrStaffMixin,
     HtmxLoginRequiredMixin,
 )
+from probo.components import frag
 from apps.global_context import get_global_context
 from apps.client.dependencies import get_client_dependency
 from apps.utility import CustomAdminRequiredMixin
@@ -75,9 +76,8 @@ class GuestIdentityView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
        return f"GuestIdentityView(app={self.app}, action={self.action}, args={self.args})"
 
 class ClientDetailView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __ctx = get_global_context()
     def get(self, request,user_id, *args, **kwargs):
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             client = (
                 get_client_dependency().select_client.get_by(id=user_id)
                 if request.user.is_authenticated
@@ -85,7 +85,8 @@ class ClientDetailView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
             )
             ctx.put('client', client)
             page = AdminUserDetailPage()
-            return HttpResponse(page.render())
+            page.load_data(ctx)
+            return HttpResponse(frag(page))
 
     def post(self, request, *args, **kwargs):
         # Process PUT request and return response

@@ -1,6 +1,6 @@
 from probo import DIV, H5, H6, P, SPAN, BUTTON, I, SMALL, A, SECTION, HR
 
-def get_status_badge(status):
+def get_status_badge(status) -> str:
     """Returns a Bootstrap badge based on order status."""
     status_map = {
         'Pending': 'warning text-dark',
@@ -11,9 +11,9 @@ def get_status_badge(status):
         'Returned': 'secondary',
     }
     color = status_map.get(status, 'secondary')
-    return SPAN(status, Class=f"badge bg-{color} small fw-semibold")
+    return color
 
-def get_payment_badge(status):
+def get_payment_badge(status) -> str:
     """Returns a badge for payment status."""
     color = 'success' if status == 'Paid' else 'danger' if status == 'Unpaid' else 'warning text-dark'
-    return SPAN(status, Class=f"badge rounded-pill bg-{color} px-2", style="font-size: 0.7rem;")
+    return color

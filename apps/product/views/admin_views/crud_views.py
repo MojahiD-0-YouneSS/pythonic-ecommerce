@@ -26,151 +26,168 @@ from ui.pages.product.admin import (
     AdminProductListingPage,
     AdminProductDetailPage
     )
-from ui.components.product.form_button import form_button, form_field_wrapper
-from apps.global_context import get_global_context
-from probo.components import frag
-from django_abstract.utilities import AdminOrStaffMixin, HtmxLoginRequiredMixin
-
+from probo.components import frag,Frag
+from django_abstract.utilities import  HtmxLoginRequiredMixin
+from probo.utility import ProboSourceString
 class AddProductView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductModelForm)
-        with self.__global_context as ctx:
+        with request.ui_context as ctx:
             
-            ctx.push(csrf_token=get_token(request),url='/product/add/product/')
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+            ctx.push(csrf_token=get_token(request),url='/product/add/product/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductModelForm)
         messages.success(request, "Product added successfully!")
-        self.__global_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
         if rdt.is_valid():
             rdt.save_form()
         return redirect("product:product")
 
 class AddProductVariantView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductVariantModelForm)
 
-        with self.__global_context as ctx: 
-            ctx.push(csrf_token=get_token(request),url='/product/add/variant/',)
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.push(csrf_token=get_token(request),url='/product/add/variant/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductVariantModelForm)
         if rdt.is_valid():
             rdt.save_form()
-        
+            messages.success(request, "Product Variant added successfully!")
+
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+
         return redirect("product:variant")
 
 class AddProductImageView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductImageModelForm)
 
-        with self.__global_context as ctx: 
-            ctx.push(csrf_token=get_token(request),url='/product/add/image/',)
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.push(csrf_token=get_token(request),url='/product/add/image/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ProductImageModelForm)
         if rdt.is_valid():
             rdt.save_form()
-        
+            messages.success(request, "Product Image added successfully!")
+
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+
         return redirect("product:image")
 
 class AddProductCategoryView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=CategoryModelForm)
 
-        with self.__global_context as ctx: 
-            ctx.push(csrf_token=get_token(request),url='/product/add/category/',)
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.push(csrf_token=get_token(request),url='/product/add/category/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=CategoryModelForm)
         if rdt.is_valid():
             rdt.save_form()
-        
+            messages.success(request, "Product Category added successfully!")
+
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+
         return redirect("product:category")
 
 class AddProductReviewView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
+
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ReviewModelForm)
 
-        with self.__global_context as ctx: 
-            ctx.push(csrf_token=get_token(request),url='/product/add/review/',)
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.push(csrf_token=get_token(request),url='/product/add/review/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ReviewModelForm)
         if rdt.is_valid():
             rdt.save_form()
-        
+            messages.success(request, "Product review added successfully!")
+
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+
         return redirect("product:review")
 
 class AddProductReplyView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
+
     def get(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ReplyModelForm)
 
-        with self.__global_context as ctx: 
-            ctx.push(csrf_token=get_token(request),url='/product/add/reply/',)
-            page = AdminProductFormPage(rdt.form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.push(csrf_token=get_token(request),url='/product/add/reply/',rdt_form=ProboSourceString(rdt.form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,):
         rdt = RequestDataTransformer(request=request, form_class=ReplyModelForm)
         if rdt.is_valid():
             rdt.save_form()
-        
+            messages.success(request, "Product Reply added successfully!")
+
+        request.ui_context.push(django_messages=messages.get_messages(request),clear_messages=True)
+
         return redirect("product:reply")
 
 # ==============================================================================
 
 class ProductListView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
+
     def get(self,request,):
-        with self.__global_context as ctx:
-            products = Product.objects.all()
-            ctx.push(products=products)
+        from django.core.paginator import Paginator
+        with request.ui_context as ctx:
+            queryset = Product.objects.all().order_by('-id')
+            page_number = request.GET.get('page', 1)
+            paginator = Paginator(queryset, 12)
+            page_obj = paginator.get_page(page_number)
+            
+            ctx.push(products=page_obj.object_list, page_obj=page_obj)
             page = AdminProductListingPage()
-            return HttpResponse(page.render())
+            page.page_obj = page_obj
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
 class ProductDetailView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __global_context = get_global_context()
+
     def get(self,request,product_id):
-        with self.__global_context as ctx:
+        with request.ui_context as ctx:
             product = get_object_or_404(Product, id=product_id)
             ctx.push(product=product)
             page = AdminProductDetailPage()
-            return HttpResponse(page.render())
-
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
 class ProductVariantEditView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
 
     def get(self,request,product_id):
         product = get_object_or_404(ProductVariant, id=product_id)
         form = ProductVariantModelForm(instance=product)
-        page = AdminProductFormPage(form=form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.put('rdt_form',ProboSourceString(form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,product_id):
         form = ProductVariantModelForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("product:products")
-
-        page = AdminProductFormPage(form=form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.put('rdt_form',ProboSourceString(form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
 class ProductVariantDeleteView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
 
@@ -187,17 +204,20 @@ class ProductEditView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
     def get(self,request,product_id):
         product = get_object_or_404(Product, id=product_id)
         form = ProductModelForm(instance=product)
-        page = AdminProductFormPage(form=form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.put('rdt_form',ProboSourceString(form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
     def post(self,request,product_id):
         form = ProductModelForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("product:products")
-
-        page = AdminProductFormPage(form=form.as_div())
-        return HttpResponse(page.render())
+        with request.ui_context as ctx:
+            ctx.put('rdt_form',ProboSourceString(form.as_div()))
+            page = AdminProductFormPage()
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))
 
 class ProductDeleteView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
 

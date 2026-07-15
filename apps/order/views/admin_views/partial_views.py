@@ -1,15 +1,13 @@
 from django.http import HttpResponse
 from django.views import View
-from apps.global_context import get_global_context
 from apps.order.dependencies import get_order_dependency
 from ui.components.order.admin.order_management import OrderManagementSection
 from apps.utility import CustomAdminRequiredMixin
-from apps.order.services.model_service import OrderModelService
-from django_abstract.utilities import AdminOrStaffMixin, HtmxLoginRequiredMixin
+from probo.components import frag,Frag
+from django_abstract.utilities import HtmxLoginRequiredMixin
 
 
 class OrderProssingView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __ctx = get_global_context()
     def post(self, request, order_id, *args, **kwargs):
         # Ensure dependencies are loaded
         order = get_order_dependency().select_order.get_by(id=order_id)
@@ -27,9 +25,9 @@ class OrderProssingView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
         order.save()
         # order_svc = OrderModelService(session_key=request.session.session_key,load_record=False)
 
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put('order', order)
             # Render the Order Management Page with the orders                 Id="order-processing-form",
-
-            page = OrderManagementSection(order=order).find(lambda n:n.attr_manager.get_attr("Id") == "order-processing-form")
-            return HttpResponse(page.render())
+            ctx.put('hx_oob', 'true')
+            page = OrderManagementSection().find(lambda n:n.attr_manager.get_id() == "order-processing-form")
+            return HttpResponse(frag(Frag(page,data_pipeline=ctx)))

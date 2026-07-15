@@ -71,7 +71,7 @@ class AuthService(BaseService):
             Handles safe, logical validation for user registration.
             If valid, passes the payload to UserModelService via hook_pad.
             """
-            username, email, password, first_name, last_name = self.get_method_args(
+            username, email, password, first_name, last_name,_ = self.get_method_args(
                 "register_user"
             )
             dpendency = get_client_dependency()

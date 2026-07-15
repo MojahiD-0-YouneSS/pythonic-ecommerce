@@ -2,24 +2,15 @@ from django.views import View
 from django.shortcuts import redirect
 from django.http import JsonResponse, HttpResponse
 from apps.client.systems.system import ClientSystem
-from apps.global_context import get_global_context
-from django.contrib import messages
-from ui.components.messaging import get_messages
-from ui.pages.client.client.profile import (
-    ClientProfilePage,
-)
 from ui.components.client.profile import (
     ProfileInfoSection,
-    SecuritySection,
-    OrderHistorySection,
-    AddressBookSection,
     SecuritySection,
 )
 from django.forms.models import model_to_dict
 from django_abstract.utilities import Entry
 from django.urls import reverse
 from probo.request import RequestDataTransformer
-from probo.components import frag
+from probo.components import frag,Frag
 
 class ClientProfileInfoView(View):
     """Handles Get, Post (Create), and Put (Update) for Client Profiles."""
@@ -27,11 +18,10 @@ class ClientProfileInfoView(View):
     def get(self, request, *args, **kwargs):
 
         user_data = model_to_dict(request.user)
-
-        ui = ProfileInfoSection(
-            user_data=user_data, is_disabled=bool(kwargs.get("is_disabled",1))
-        )
-        return HttpResponse(ui.render())
+        with request.ui_context as ctx:
+            ui = ProfileInfoSection()
+            ctx.push(**{'user_data': user_data, 'is_disabled': bool(kwargs.get("is_disabled",1))})
+            return HttpResponse(frag(Frag(ui, data_pipeline=ctx)))
 
     def post(self, request, *args, **kwargs):
         entry = Entry(
@@ -53,10 +43,10 @@ class ClientProfileInfoView(View):
 
         system = ClientSystem(entry=entry)
         success, entry = system.execute("client_operator")
-        ui = ProfileInfoSection(
-            user_data=entry.service_entry_data.service_data, is_disabled=bool(kwargs.get("is_disabled", 1))
-        )
-        return HttpResponse(ui.render())
+        with request.ui_context as ctx:
+            ctx.push(**{'user_data': entry.service_entry_data.service_data, 'is_disabled': bool(kwargs.get("is_disabled", 1))})
+            ui = ProfileInfoSection()
+            return HttpResponse(frag(Frag(ui,data_pipeline=ctx)))
 
 class ClientLoginInfoView(View):
     """Handles Get, Post (Create), and Put (Update) for Client Profiles."""
@@ -64,11 +54,11 @@ class ClientLoginInfoView(View):
     def get(self, request, *args, **kwargs):
 
         user_data = model_to_dict(request.user)
+        with request.ui_context as ctx:
 
-        ui = SecuritySection(
-            user_data=user_data, is_disabled=bool(kwargs.get("is_disabled",1))
-        )
-        return HttpResponse(ui.render())
+            ui = SecuritySection()
+            ctx.push(**{'user_data': user_data, 'is_disabled': bool(kwargs.get("is_disabled",1))})
+            return HttpResponse(frag(Frag(ui,data_pipeline=ctx)))
 
     def post(self, request, *args, **kwargs):
 
@@ -93,10 +83,7 @@ class ClientLoginInfoView(View):
             system = ClientSystem(entry=entry)
             success, entry = system.execute("client_operator")
             return redirect(reverse("cms:home"))
-
-        ui = SecuritySection(
-            user_data=entry.service_entry_data.service_data, is_disabled=bool(kwargs.get("is_disabled", 1)), error=error
-        )
-        return HttpResponse(frag(
-            ui,
-            ))
+        with request.ui_context as ctx:
+            ui = SecuritySection()
+            ctx.push({'user_data': entry.service_entry_data.service_data, 'is_disabled': bool(kwargs.get("is_disabled", 1)), 'error': error})
+            return HttpResponse(frag(Frag(ui, data_pipeline=ctx)))

@@ -1,6 +1,4 @@
 from django.middleware.csrf import get_token
-from apps.global_context import get_global_context
-
 
 class CsrfContextMiddleware:
     """
@@ -12,18 +10,13 @@ class CsrfContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. Force the generation and retrieval of the active CSRF token.
-        # This automatically sets the 'csrftoken' cookie in the user's browser
-        # and grabs the token string securely.
         csrf_token = get_token(request)
 
-        # 2. Fetch our global Probo Context singleton
-        context = get_global_context()
-
         # 3. Securely inject the token into the global UI state
-        context.put("csrf_token", csrf_token)
-        context.put("is_admin", False if not request.user.username == 'admin_1' else True)  # Initialize is_admin based on user role
-        print(context._get_bucket())
+        request.ui_context.put("csrf_token", csrf_token)
+        request.ui_context.put("global_csrf_token", f"js:{{'X-CSRFToken': '{csrf_token}'}}")
+        request.ui_context.put("hx_oob", False)
+        request.ui_context.put("is_admin", False if not request.user.username == 'admin_1' else True)  # Initialize is_admin based on user role
         # 4. Continue the Django request/response pipeline
         response = self.get_response(request)
         return response

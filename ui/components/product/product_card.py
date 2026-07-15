@@ -2,48 +2,34 @@ from probo import DIV, H5, P, IMG, BUTTON, A
 from django.urls import reverse
 
 
-def ProductCard(product_data, image=None):
-    """Expects a dictionary or object with name, price, and image_url"""
-    cat_url = reverse(
-        "cart:add_to_cart",
-        kwargs={
-            "product_id": (
-                product_data.id
-                if hasattr(product_data, "id")
-                else product_data.get("id")
-            )
-        },
-    )
+def ProductCard():
+    """Declarative component that pulls 'product' from the data pipeline."""
     return DIV(
         DIV(
             # Product Image (Using your static files)
             DIV(
                 A(
                     IMG(
-                        src=image or product_data.get("image_url"),
+                        src={'image_url'},
                         Class="card-img-top",
-                        alt="product_data",
+                        alt="product image",
                     ),
                     # Product Details
                     DIV(
                         H5(
-                            (
-                                product_data.name
-                                if hasattr(product_data, "name")
-                                else product_data.get("name")
-                            ),
+                            {'product.name'},
                             Class="card-title fw-bolder text-center",
                         ),
                         DIV(
-                            f"${(product_data.base_price if hasattr(product_data,'base_price') else  product_data.get('base_price',product_data.get('price', '0.00')))}",
+                            {'product.base_price', lambda **dvars: f"${dvars.get('product.base_price')}"},
                             Class="text-center mb-3",
                         ),
                         Class="card-body p-4",
                     ),
-                    href=reverse(
+                    href={'product.id', lambda **dvars: reverse(
                         "product:product-detail",
-                        kwargs={"product_id": product_data.get("id")},
-                    ),
+                        kwargs={"product_id": dvars.get("product.id")},
+                    )},
                     Class='nav-link',
                 )
             ),
@@ -52,7 +38,10 @@ def ProductCard(product_data, image=None):
                 DIV(
                     BUTTON(
                         "Add to cart",
-                        hx_get=cat_url,
+                        hx_get={'product.id', lambda **dvars: reverse(
+                            "cart:add_to_cart",
+                            kwargs={"product_id": dvars.get("product.id")}
+                        )},
                         hx_target="#messages-container",  # Updates your cart dynamically
                         hx_swap="innerHTML",
                         Class="btn btn-outline-dark mt-auto w-100",

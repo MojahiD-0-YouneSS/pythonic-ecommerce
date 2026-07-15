@@ -15,6 +15,7 @@ from probo import (
     INPUT,
     LABEL,
 )
+from probo.components import frag, Frag
 from probo.components.light_tags import (
     Ltd,
     Lth,
@@ -29,47 +30,32 @@ from ui.components.crf_token import CsrfToken
 from django.urls import reverse
 
 
-def CartItemRow(item, edit=False,post=False) -> Ltr|TR:
+def CartItemRow() -> TR:
     """
-    Renders a single row for a cart item.
-    If it's the first row, it includes the unified Order Summary column.
+    Renders a single row for a cart item using data_pipeline variables.
     """
-    ctx = get_global_context()
-    qty_form = ctx.get("qty_form_html")
-    # name = item.product.name
-    image = (
-        get_product_app_dependency()
-        .select_product_image.model_class.objects.filter(variant=item.product_variant)
-        .first()
-        .image
-    )
-    # item=CartAppDependency().select_cart_item.access_db.get(cart=ctx.get('cart'),product_variant=item,is_active=True)
-    # item = model_to_dict(item)
-    # item["image"] = image
-    # item["name"] = name
-    # Item Details Column
     row_content = [
         Ltd(
             DIV(
                 IMG(
-                    src=image,
+                    src={'item.product_variant.image.url'},
                     Class="img-fluid rounded",
                     style="width: 50px;",
                 ),
-                SPAN(item.product_variant.product.name, Class="ms-3 fw-bold"),
+                SPAN({'item.product_variant.product.name'}, Class="ms-3 fw-bold"),
                 Class="d-flex align-items-center",
             )
         ),
-        Ltd(f"${item.product_variant.base_price}", Class="align-middle"),
+        Ltd({'item.product_variant.base_price'}, Class="align-middle"),
         Ltd(
-            (
-                SPAN(str(item.quantity), Class="fw-semibold")
-                if edit and post or not edit
+            {'edit', 'post', 'item', 'qty_form', lambda **dvars :(
+                SPAN(getattr(dvars.get('item'),'quantity', 0),Id='quantity', Class="fw-semibold")
+                if dvars.get('edit',False) and dvars.get('post',False) or not dvars.get('edit',False)
                 else (
                     FORM(
                         CsrfToken(),
                         DIV(
-                            DIV(qty_form, Class="col-7"),
+                            DIV(dvars.get('qty_form'), Class="col-7"),
                             DIV(
                                 BUTTON(
                                     "Save",
@@ -80,19 +66,19 @@ def CartItemRow(item, edit=False,post=False) -> Ltr|TR:
                             ),
                             Class="row g-0 align-items-center",
                         ),
-                        hx_post=reverse(
+                        hx_post='#' if not dvars.get('item') else reverse(
                             "cart:edit-cart-item",
-                            kwargs={"item_id": item.id},
+                            kwargs={"item_id":getattr(dvars.get('item'),'id','')},
                         ),
                         # We target ONLY this cell and swap its inner HTML with the view's raw response
-                        hx_target=f"#qty-row-{item.id}",
+                        hx_target=f"#qty-row-{(getattr(dvars.get('item'),'id',''))}",
                         hx_swap="innerHTML",
                         Class="m-0 p-1 border-0 bg-transparent",
                     )
                 )
-            ),
+                    )},
             Class="align-middle",
-            Id=f"qty-row-{item.id}",  # Matches the hx-target ID
+            Id={'item', lambda **dvars: f"qty-row-{(getattr(dvars.get('item'),'id',''))}"},  # Matches the hx-target ID
         ),
         Ltd(
             # 1. Edit / Update Button
@@ -101,9 +87,9 @@ def CartItemRow(item, edit=False,post=False) -> Ltr|TR:
                 "Edit",
                 Class="btn btn-xs btn-outline-primary me-2 align-middle",
                 # Passes item ID as a clean query parameter
-                hx_get=reverse("cart:edit-cart-item", kwargs={"item_id": item.id}),
+                hx_get={'item', lambda **dvars:'#' if not dvars.get('item') else reverse( "cart:edit-cart-item", kwargs={"item_id": getattr(dvars.get('item'),'id','')})},
                 # Swaps the edit form directly into your sidebar, modal, or form area
-                hx_target=f"#row-{item.id}",
+                hx_target={'item', lambda **dvars: f"#row-{(getattr(dvars.get('item'),'id',''))}"},
                 hx_swap="outerHTML",
             ),
             # 2. Remove Button
@@ -112,9 +98,9 @@ def CartItemRow(item, edit=False,post=False) -> Ltr|TR:
                 "Remove",
                 Class="btn btn-xs btn-outline-danger align-middle",
                 # Passes item ID as a clean query parameter
-                hx_get=reverse("cart:remove_from_cart", kwargs={"item_id": item.id}),
+                hx_get={'item', lambda **dvars:'#' if not dvars.get('item') else reverse("cart:remove_from_cart", kwargs={"item_id": getattr(dvars.get('item'),'id','') })},
                 # Automatically targets the corresponding table row to remove it from the DOM
-                hx_target=f"#row-{item.id}",
+                hx_target={'item', lambda **dvars: f"#row-{(getattr(dvars.get('item'),'id',''))}"},
                 hx_swap="outerHTML",
                 # Native browser confirmation dialog safely managed by HTMX
                 hx_confirm="Are you sure you want to permanently delete this item?",
@@ -139,33 +125,16 @@ def CartItemRow(item, edit=False,post=False) -> Ltr|TR:
     #         )
     #     )
 
-    return (
-        Ltr(
+    return TR(
             *row_content,
-            Id=f"row-{item.id}",
-        )
-        if not edit
-        else TR(
-            *row_content,
-            Id=f"row-{item.id}",
-        )
-    )
+            Id={'item', lambda **dvars:f"row-{(getattr(dvars.get('item'), 'id', ''))}"},
+            )
 
-
-def CartItemTable(items,hx_oob=False) -> DIV:
+def CartItemTable() -> DIV:
     """
     Renders the full cart table or a placeholder if empty.
     """
-    if not items:
-        return DIV(
-            P("Your cart is feeling a bit light...", Class="text-muted"),
-            A("Go Shopping!", href="/", Class="btn btn-outline-secondary mb-3"),
-            Class="text-center py-5 mb-3",
-            Id='items-table',
-            hx_swap_oob='true' if hx_oob else False
-        )
 
-    # Table Header
     header = THEAD(
         Ltr(
             Lth("Product", scope="col"),
@@ -178,25 +147,33 @@ def CartItemTable(items,hx_oob=False) -> DIV:
             # Lth("Summary", scope="col", style="width: 250px;"),
         )
     )
-
-    # Table Body
-    rows = []
-    for item in items.all():
-        rows.append(
-            CartItemRow(
-                item,
+    def process_items(**kwargs):
+        items = kwargs.get('cart_items',[])
+        # edit = kwargs.get('edit',False)
+        if not items:
+            return DIV(
+                P("Your cart is feeling a bit light...", Class="text-muted"),
+                A("Go Shopping!", href="/", Class="btn btn-outline-secondary mb-3"),
+                Class="text-center py-5 mb-3",
+                Id='items-table',
+                hx_swap_oob={'hx_oob'}
             )
-        )
 
+        # Table Body
+        rows = []
+        for item in items:
+            row = Frag(CartItemRow(), data_pipeline={'item':item,})
+            rows.append(row)
+        return frag(*rows)
     return DIV(
         TABLE(
             header,
             TBODY(
-                *rows,
+                {'cart_items','edit',process_items},
             ),
             Class="table table-hover align-middle border-top",
         ),
         Class="table-responsive",
         Id='items-table',
-        hx_swap_oob='true' if hx_oob else False
+        hx_swap_oob={'hx_oob'}
     )

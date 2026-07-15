@@ -1,7 +1,7 @@
-from ui.components.messaging import get_messages 
+from probo.utility import ProboSourceString
+from ui.components.messaging import get_messages
 from django.contrib import messages
 from django.views import View
-from apps.global_context import get_global_context
 from apps.cart.services.cart_service import CartItemModelService
 from apps.cart.dependencies import CartAppDependency
 from django.http import HttpResponse
@@ -11,17 +11,16 @@ from ui.components.cart.cart_summary import CartSummaryCard
 from ui.components.cart.cart_item import CartItemRow
 from django_abstract.utilities import ServiceEntryData
 from apps.cart.forms.client_forms.custom_form import QuantityUpdateForm
-from probo.components import frag
+from probo.components import frag, Frag
 from probo import span
 
 class AddToCartView(View):
-    __ctx = get_global_context()
 
     def get(self,request,product_id):
-        session_key = self.__ctx.get('session_key')
+        session_key = request.ui_context.get('session_key')
         if not session_key:
             session_key = request.sessions.session_key
-            self.__ctx.put('session_key',session_key)
+            request.ui_context.put('session_key',session_key)
         quantity = request.GET.get('quantity',1)
         cart_service = CartItemModelService(session_key=session_key, load_record=False)
         entry = ServiceEntryData()
@@ -37,23 +36,25 @@ class AddToCartView(View):
         #     cart_item.quantity += quantity
         #     cart_item.save()
         data = cart_service.hook(entry=entry)
-        self.__ctx.put("cart_item_count", data.service_data.get("total_items"))
-        created =  data.service_data.get('created')
-        if created:
-            messages.success(request=request,message="Youre item is created successfully")
-        else:
-            messages.warning(request=request,message="Youre item was not created successfully")
-        message = get_messages(messages=messages.get_messages(request=request))
-        return HttpResponse(message.render() + cart_icon(cart_count=self.__ctx.get("cart_item_count"),hx_oob=True).render())
+        with request.ui_context as ctx:
+            ctx.put("cart_item_count", data.service_data.get("total_items"))
+            ctx.put("hx_oob", "true")
+            created =  data.service_data.get('created')
+            if created:
+                messages.success(request=request,message="Youre item is created successfully")
+            else:
+                messages.warning(request=request,message="Youre item was not created successfully")
+            ctx.put('django_messages',messages.get_messages(request=request))
+            message = get_messages()
+            return HttpResponse(frag(Frag(message, cart_icon(),data_pipeline=ctx)))
 
 class RemoveFromCartView(View):
-    __ctx = get_global_context()
 
     def get(self,request,item_id):
-        session_key = self.__ctx.get('session_key')
+        session_key = request.ui_context.get('session_key')
         if not session_key:
             session_key = request.sessions.session_key
-            self.__ctx.put('session_key',session_key)
+            request.ui_context.put('session_key',session_key)
         cart_service = CartItemModelService(session_key=session_key, load_record=False)
         entry = ServiceEntryData()
         entry.service_data["method_name"] = "remove_item_from_cart"
@@ -61,25 +62,27 @@ class RemoveFromCartView(View):
         entry.service_data["session"] = session_key
         data = cart_service.hook(entry=entry)
         
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put(
                 "cart_item_count", data.service_data.get("total_items")
             )
+            ctx.put(
+                "hx_oob", "true"
+            )
             ctx.push(**data.service_data)
-            messages.success(request=request,message="Youre item is removed cessess fully")
-            message = get_messages(messages=messages.get_messages(request=request),hx_oob=True)
-            summary = CartSummaryCard(data.service_data.get('cart'),hx_oob=True)
+            messages.success(request=request,message="Your item is removed successfully")
+            message = get_messages()
+            summary = CartSummaryCard()
 
-            return HttpResponse(message.render() + cart_icon(cart_count=self.__ctx.get("cart_item_count"),hx_oob=True).render()+ summary.render())
+            return HttpResponse(frag(Frag(message , cart_icon(), summary,data_pipeline=ctx)))
 
 class UpdateItemQuantityView(View):
-    __ctx = get_global_context()
 
     def get(self,request,item_id):
-        session_key = self.__ctx.get('session_key')
+        session_key = request.ui_context.get('session_key')
         if not session_key:
             session_key = request.sessions.session_key
-            self.__ctx.put('session_key',session_key)
+            request.ui_context.put('session_key',session_key)
         cart_service = CartItemModelService(session_key=session_key, load_record=False)
         entry = ServiceEntryData()
         entry.service_data["method_name"] = "get_item"
@@ -89,18 +92,20 @@ class UpdateItemQuantityView(View):
             initial={"quantity": data.service_data.get("item").quantity},
             max_stock=data.service_data.get("item").product_variant.stock,
         )
-        with self.__ctx as ctx:
-            ctx.put("qty_form_html", str(form))
+        with request.ui_context as ctx:
+            ctx.put("qty_form", ProboSourceString(form))
             ctx.put("csrf_token", get_token(request))
             ctx.push(**data.service_data)
-            item_row = CartItemRow(data.service_data.get("item"),edit=True)
-            return HttpResponse(item_row.render())
+            ctx.put('edit',True)
+            item_row = CartItemRow()
+
+            return HttpResponse(frag(Frag(item_row,data_pipeline=ctx)))
 
     def post(self,request,item_id):
-        session_key = self.__ctx.get('session_key')
+        session_key = request.ui_context.get('session_key')
         if not session_key:
             session_key = request.sessions.session_key
-            self.__ctx.put('session_key',session_key)
+            request.ui_context.put('session_key',session_key)
         form = QuantityUpdateForm(request.POST)
         qty = None
         if form.is_valid():
@@ -113,17 +118,20 @@ class UpdateItemQuantityView(View):
         entry.service_data["session"] = session_key
         data = cart_service.hook(entry=entry)
 
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put(
                 "cart_item_count", data.service_data.get("total_items")
             )
             ctx.push(**data.service_data)
+            ctx.put('hx_oob','true')
 
-            messages.success(request=request,message="Your item's quantity is updated cessess fully")
-            message = get_messages(messages=messages.get_messages(request=request),hx_oob=True)
-            summary = CartSummaryCard(data.service_data.get('cart'),hx_oob=True)
+            messages.success(request=request,message="Your item's quantity is updated successfully")
+            ctx.put('django_messages',messages.get_messages(request))
+            message = get_messages()
+            summary = CartSummaryCard()
             item_row = span(data.service_data.get("item").quantity, Class="fw-semibold")
-            return HttpResponse(frag(
+
+            return HttpResponse(frag(Frag(
                 message,
                 summary,
-                item_row,))
+                item_row,data_pipeline=ctx),))

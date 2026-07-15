@@ -14,5 +14,9 @@ client_url_patterns = [
         "add/address/",
         partial_views.AddAddressView.as_view(),
         name="add-billing-address",
+    ),path(
+        "order/detail/<uuid:order_id>",
+        partial_views.OrderDetailView.as_view(),
+        name="order_detail",
     ),
 ]

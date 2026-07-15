@@ -55,7 +55,7 @@ def CategoryFilterSidebar(categories, selected_category_ids=None):
                     {
                         "hx-get": f"{url}?clear=true",
                         "hx-target": "#product-grid-container",
-                        "hx-swap": "innerHTML",
+                        "hx-swap": "outerHTML",
                     }
                     if selected_category_ids
                     else {"style": "display: none;"}
@@ -88,7 +88,7 @@ def CategoryFilterSidebar(categories, selected_category_ids=None):
             hx_get=url,
             hx_target="#product-grid-container",
             hx_trigger="change delay:100ms",
-            hx_swap="innerHTML",
+            hx_swap="outerHTML",
         ),
         # Tiny client-side search script to keep interactions sub-millisecond
         SCRIPT("""

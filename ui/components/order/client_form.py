@@ -1,23 +1,27 @@
 from probo import DIV, H4, P, FORM, INPUT, LABEL, BUTTON, TEXTAREA
 from django.urls import reverse
+from probo.components import Frag
 
-def AddAddressForm(form, address_id=None) -> DIV:
+def AddAddressForm() -> DIV:
     """
     Renders a custom Address Form bound directly to a Django Form instance.
     Extracts bound values and validation errors for a premium UX.
     """
     # is_editing = bool(address_id)
-    title = "Edit Address" #if is_editing else "Add New Address"
-    post_url = (
-        reverse(
-            "order:add-billing-address",
-        )  # kwargs={addr.get('id')})
-        # if is_editing
-        # else "/client/profile/addresses/add/"
-    )
 
     # --- UI HELPER: Automatically handles values, errors, and styling ---
-    def InputField(name, label, input_type="text", placeholder="", col_class="mb-3"):
+    def Input_Field(**dvars):
+        form=dvars.get('form',)
+        name=dvars.get('name',)
+        print('<===========Input_Field============>',dvars)
+        label=dvars.get('label',)
+        input_type=dvars.get('input_type',) or "text"
+        placeholder=dvars.get('placeholder',) or ""
+        col_class=dvars.get('col_class',) or"mb-3"
+
+        if not form:
+            return DIV()
+
         field = form[name]
         has_error = bool(field.errors)
 
@@ -47,7 +51,15 @@ def AddAddressForm(form, address_id=None) -> DIV:
         )
 
     # --- TEXTAREA HELPER for delivery instructions ---
-    def TextareaField(name, label, placeholder="", rows="3", col_class="mb-4"):
+    def Textarea_Field(**dvars):
+        form = dvars.get('form',)
+        name = dvars.get('name') or None
+        label = dvars.get('label') or None
+        placeholder=""
+        rows="3"
+        col_class="mb-4"
+        if not form:
+            return DIV
         field = form[name]
         has_error = bool(field.errors)
         val = field.value()
@@ -67,51 +79,69 @@ def AddAddressForm(form, address_id=None) -> DIV:
             Class=col_class,
         )
 
+
     return DIV(
         DIV(
-            H4(title, Class="card-title fw-bold mb-4"),
+            H4({'title',lambda **dvars:dvars.get('title') or "Edit Address"}, Class="card-title fw-bold mb-4"),
             FORM(
                 # 1. Full Name & Phone Number,
                 DIV(
-                    InputField(
-                        "full_name",
-                        "Full Name",
-                        placeholder="John Doe",
-                        col_class="col-md-6 mb-3",
-                    ),
-                    InputField(
-                        "phone_number",
-                        "Phone Number",
-                        input_type="tel",
-                        placeholder="+1 (555) 000-0000",
-                        col_class="col-md-6 mb-3",
-                    ),
+                    Frag({'form','name','label','placeholder','col_class',Input_Field},data_pipeline={
+                        'name':"full_name",
+                        'label':"Full Name",
+                        'placeholder':"John Doe",
+                        'col_class':"col-md-6 mb-3"}),
+                    Frag({'form','name','label','placeholder','col_class','input_type',Input_Field},
+                         data_pipeline={
+                        'name':"phone_number",
+                        'label':"Phone Number",
+                        'placeholder':"+1 (555) 000-0000",
+                        'input_type':"tel",
+                        'col_class':"col-md-6 mb-3"}),
                     Class="row",
                 ),
                 # 2. Address Lines
-                InputField(
-                    "address_line_1", "Address Line 1", placeholder="123 Main St"
-                ),
-                InputField(
-                    "address_line_2",
-                    "Address Line 2 (Optional)",
-                    placeholder="Apartment, studio, suite, or floor",
-                ),
+                Frag({'form','name','label','placeholder','col_class',Input_Field},
+                     data_pipeline={
+                        'name':"address_line_1",
+                        'label':"Address Line 1",
+                        'placeholder':"123 Main St",
+                        'col_class':"col-md-6 mb-3",}),
+                Frag({'form','name','label','placeholder','col_class',Input_Field},
+                     data_pipeline={
+                        'name':"address_line_2",
+                        'label':"Address Line 2 (Optional)",
+                        'placeholder':"Apartment, studio, suite, or floor",
+                        'col_class':"col-md-6 mb-3",}),
                 # 3. City, State, Postal Code
                 DIV(
-                    InputField("city", "City", col_class="col-md-4 mb-3"),
-                    InputField("state", "State / Province", col_class="col-md-4 mb-3"),
-                    InputField("postal_code", "Postal Code", col_class="col-md-4 mb-3"),
+                    Frag({'form','name','label','placeholder','col_class',Input_Field},data_pipeline={
+                        'name':"city",
+                        'label':"City",
+                        'placeholder':"Apartment, studio, suite, or floor",
+                        'col_class':"col-md-4 mb-3",}),
+                    Frag({'form','name','label','placeholder','col_class',Input_Field},data_pipeline={
+                        'name':"state",
+                        'label':"State / Province",
+                        'placeholder':"Apartment, studio, suite, or floor",
+                        'col_class':"col-md-6 mb-3",}),
+                    Frag({'form','name','label','placeholder','col_class',Input_Field},data_pipeline={
+                        'name':"postal_code",
+                        'label':"Postal Code",
+                        'placeholder':"Apartment, studio, suite, or floor",
+                        'col_class':"col-md-4 mb-3",}),
                     Class="row",
                 ),
                 # 4. Country
-                InputField("country", "Country"),
+                Frag({'form','name','label','placeholder',Input_Field},data_pipeline={
+                        'name':"country",
+                        'label':"Country",
+                        'placeholder':"USA",}),
                 # 5. Delivery Instructions
-                TextareaField(
-                    "delivery_instructions",
-                    "Delivery Instructions (Optional)",
-                    placeholder="E.g., Leave package at the front door, gate code is 1234...",
-                ),
+                Frag({'form','name','label','placeholder',Textarea_Field},data_pipeline={
+                        'name':"delivery_instructions",
+                        'label':"Delivery Instructions (Optional)",
+                        'placeholder':"E.g., Leave package at the front door, gate code is 1234...",}),
                 # 6. Action Buttons
                 DIV(
                     BUTTON(
@@ -126,7 +156,7 @@ def AddAddressForm(form, address_id=None) -> DIV:
                     Class="mt-2 pt-3 border-top",
                 ),
                 # HTMX Integration
-                hx_post=post_url,
+                hx_post=reverse("order:add-billing-address",),
                 hx_target="#profile-content-area",
                 hx_swap="innerHTML",
             ),

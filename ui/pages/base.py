@@ -6,6 +6,8 @@ from apps.global_context import get_global_context
 
 def get_base_template(*args,**kwargs):
     base = base_template_tree(override_body=True)
+    base.html_doc.load_data(get_global_context())
+    base.html_doc.get_data_pipeline.put('x',12345679)
     base_head = base.html_doc.find(lambda n:n.tag == 'HEAD')
     if base_head:
         base_head.add(
@@ -15,17 +17,25 @@ def get_base_template(*args,**kwargs):
             )
         ).add(
             SCRIPT(
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js",
-            integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM",
-            crossorigin="anonymous",
+                src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js",
+                integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM",
+                crossorigin="anonymous",
+            )
+        ).add(
+            LINK(
+                rel="stylesheet",
+                href="/static/css/style.css"
+            )
+        ).add(
+            LINK(
+                rel="stylesheet",
+                href="/static/css/premium.css"
             )
         )
     base_body = base.html_doc.find(lambda n:n.tag == 'BODY')
     if base_body:
-        ctx = get_global_context()
-        base_body.attr_manager.set_attr(
-            'hx_headers',f"js:{{'X-CSRFToken': '{ctx.get('csrf_token')}'}}",
-        )
+        base_body.attributes['hx_headers']=base_body.get_data('global_csrf_token')
+
         # hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     return base
 
@@ -44,11 +54,12 @@ def get_management_base_template(*args,**kwargs):
     return base
 
 def get_client_base_template(*args,**kwargs):
+    from probo import A, LI
+    from django.urls import reverse
+
     base = get_base_template()
     base_body = base.html_doc.find(lambda n:n.tag == 'BODY')
-    ctx = get_global_context()
-    user_status = ctx.get('user_auth')
-    is_admin = ctx.get("is_admin")
+    
     if base_body:
         base_body.add(
             DIV(
@@ -58,7 +69,7 @@ def get_client_base_template(*args,**kwargs):
                 style="z-index: 1055;",
             )
         ).add(
-            ClientHeader(cart_count=ctx.get("cart_item_count", 0),user_status=user_status,is_admin=is_admin),
+            ClientHeader(),
         ).add(
             DIV(Class="container", data_ssdom_id="root-container"),
         ).add(

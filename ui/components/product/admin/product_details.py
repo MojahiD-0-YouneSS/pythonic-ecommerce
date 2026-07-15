@@ -1,51 +1,52 @@
 from probo import BUTTON, DIV, H5, H6, P, SPAN, A, I, SMALL, IMG
 from django.urls import reverse
+from probo.components import Frag
 
-
-def AdminProductVariantDetailCard(variant=None) -> DIV:
+def AdminProductVariantDetailCard() -> Frag:
     """
     A robust admin card for ProductVariant model instances.
     Uses flat argument structure to prevent Probo rendering/bypass errors.
     """
-    if not variant:
-        return DIV("No variant data available.", Class="alert alert-warning p-3")
+    def product_variant_card(**dvars):
+        variant = dvars.get('variant')
+        if not variant:
+            return DIV("No variant data available.", Class="alert alert-warning p-3")
 
-    # 1. Logic & Helpers
-    status_color = "success" if variant.is_active else "secondary"
-    status_text = "Active" if variant.is_active else "Inactive"
-    stock_color = "danger" if variant.stock < 10 else "dark"
+        # 1. Logic & Helpers
+        status_color = "success" if variant.is_active else "secondary"
+        status_text = "Active" if variant.is_active else "Inactive"
+        stock_color = "danger" if variant.stock < 10 else "dark"
 
-    # Handle Price logic (Base vs Promo)
-    has_promo = variant.promo_price and variant.promo_price < variant.base_price
-    price_display = (
-        DIV(
-            H6(f"${variant.promo_price}", Class="mb-0 text-danger fw-bold d-inline"),
-            SMALL(
-                f"${variant.base_price}",
-                Class="text-muted text-decoration-line-through ms-2 small",
-            ),
-            Class="d-flex align-items-center",
+        # Handle Price logic (Base vs Promo)
+        has_promo = variant.promo_price and variant.promo_price < variant.base_price
+        price_display = (
+            DIV(
+                H6(f"${variant.promo_price}", Class="mb-0 text-danger fw-bold d-inline"),
+                SMALL(
+                    f"${variant.base_price}",
+                    Class="text-muted text-decoration-line-through ms-2 small",
+                ),
+                Class="d-flex align-items-center",
+            )
+            if has_promo
+            else H6(f"${variant.base_price}", Class="mb-0 text-primary fs-5")
         )
-        if has_promo
-        else H6(f"${variant.base_price}", Class="mb-0 text-primary fs-5")
-    )
 
-    # 2. Attribute Badges (Color, Size, Fabric etc.)
-    attributes = []
-    if variant.color:
-        attributes.append(
-            SPAN(variant.color, Class="badge bg-light text-dark border me-1")
-        )
-    if variant.size:
-        attributes.append(
-            SPAN(variant.size, Class="badge bg-light text-dark border me-1")
-        )
-    if variant.fabric:
-        attributes.append(
-            SPAN(variant.fabric, Class="badge bg-light text-dark border me-1")
-        )
-    # 3. Component Construction (Flat structure)
-    return DIV(
+        # 2. Attribute Badges (Color, Size, Fabric etc.)
+        attributes = []
+        if variant.color:
+            attributes.append(
+                SPAN(variant.color, Class="badge bg-light text-dark border me-1")
+            )
+        if variant.size:
+            attributes.append(
+                SPAN(variant.size, Class="badge bg-light text-dark border me-1")
+            )
+        if variant.fabric:
+            attributes.append(
+                SPAN(variant.fabric, Class="badge bg-light text-dark border me-1")
+            )
+        return DIV(
         DIV(
             # Header Row: Thumbnail and Title
             DIV(
@@ -124,17 +125,19 @@ def AdminProductVariantDetailCard(variant=None) -> DIV:
         Class="card shadow-sm border-0 h-100 col-md-4",
         style="max-width: 350px;",
     )
+    return Frag({'variant',product_variant_card})
 
 
-def AdminProductImageDetailCard(product_image=None) -> DIV:
+def AdminProductImageDetailCard() -> Frag:
     """Renders a gallery-style card for managing product images."""
-    if not product_image:
-        return DIV("No product image data available.", Class="alert alert-warning p-3")
+    def product_image_card(**dvars):
+        product_image = dvars.get('product_image')
+        if not product_image:
+            return DIV("No product image data available.", Class="alert alert-warning p-3")
 
-    is_main = getattr(product_image, "is_main", False)
-    border_class = "border-primary border-2" if is_main else "border-light"
-
-    return DIV(
+        is_main = getattr(product_image, "is_main", False)
+        border_class = "border-primary border-2" if is_main else "border-light"
+        return DIV(
         DIV(
             # Image Preview
             DIV(
@@ -183,19 +186,20 @@ def AdminProductImageDetailCard(product_image=None) -> DIV:
         Class=f"card shadow-sm {border_class} h-100",
         style="width: 200px;",
     )
+    return Frag({'product_image',product_image_card})
 
 
-def AdminCategoryDetailCard(category=None) -> DIV:
+def AdminCategoryDetailCard() -> DIV:
     """Renders a management card for Category model."""
-    if not category:
-        return DIV("No category data available.", Class="alert alert-warning p-3")
+    def category_card(**dvar):
+        category = dvar.get('category')
+        if not category:
+            return DIV("No category data available.", Class="alert alert-warning p-3")
 
-    parent_text = (
-        f"Parent: {category.parent.name}" if category.parent else "Top-level Category"
-    )
-
-    return DIV(
-        DIV(
+        parent_text = (
+            f"Parent: {category.parent.name}" if category.parent else "Top-level Category"
+        )
+        return DIV(
             DIV(
                 (
                     IMG(
@@ -235,26 +239,28 @@ def AdminCategoryDetailCard(category=None) -> DIV:
                 Class="d-flex border-top pt-2 mt-auto",
             ),
             Class="card-body d-flex flex-column",
-        ),
+        )
+    return DIV(
+        {'category',category_card},
         Class="card shadow-sm border-0 h-100",
         style="max-width: 300px;",
     )
 
 
-def AdminReviewDetailCard(review=None) -> DIV:
+def AdminReviewDetailCard() -> DIV:
     """Renders a card for moderation of ReviewModel."""
-    if not review:
-        return DIV("No review data available.", Class="alert alert-warning p-3")
+    def review_card(**dvars):
+        review = dvars.get('review')
+        if not review:
+            return DIV("No review data available.", Class="alert alert-warning p-3")
 
-    status_color = "success" if review.is_active else "danger"
-    status_text = "Active" if review.is_active else "Hidden"
+        status_color = "success" if review.is_active else "danger"
+        status_text = "Active" if review.is_active else "Hidden"
 
-    # Generate stars
-    stars = [I(Class="bi bi-star-fill text-warning me-1") for _ in range(review.rating)]
-    stars += [I(Class="bi bi-star text-muted me-1") for _ in range(5 - review.rating)]
-
-    return DIV(
-        DIV(
+        # Generate stars
+        stars = [I(Class="bi bi-star-fill text-warning me-1") for _ in range(review.rating)]
+        stars += [I(Class="bi bi-star text-muted me-1") for _ in range(5 - review.rating)]
+        return DIV(
             DIV(
                 DIV(
                     H6(f"User: {review.user.username}", Class="mb-0 fw-bold small"),
@@ -283,25 +289,27 @@ def AdminReviewDetailCard(review=None) -> DIV:
                 Class="d-flex border-top pt-2 mt-auto",
             ),
             Class="card-body d-flex flex-column",
-        ),
+        )
+    return DIV(
+        {'review',review_card},
         Class="card shadow-sm border-0 h-100",
         style="max-width: 350px;",
     )
 
 
-def AdminReplyDetailCard(reply=None) -> DIV:
+def AdminReplyDetailCard() -> DIV:
     """Renders a card for managing ReplyModel entries."""
-    if not reply:
-        return DIV("No reply data available.", Class="alert alert-warning p-3")
+    def reply_card(**dvars):
+        reply = dvars.get('reply')
+        if not reply:
+            return DIV("No reply data available.", Class="alert alert-warning p-3")
 
-    status_label = (
-        SPAN("Visible", Class="badge bg-success")
-        if reply.is_active
-        else SPAN("Hidden", Class="badge bg-danger")
-    )
-
-    return DIV(
-        DIV(
+        status_label = (
+            SPAN("Visible", Class="badge bg-success")
+            if reply.is_active
+            else SPAN("Hidden", Class="badge bg-danger")
+        )
+        return DIV(
             DIV(
                 SMALL("Reply to Review", Class="text-muted fw-bold"),
                 status_label,
@@ -322,67 +330,74 @@ def AdminReplyDetailCard(reply=None) -> DIV:
                 Class="d-flex border-top pt-2",
             ),
             Class="card-body",
-        ),
+        )
+    return DIV(
+        {'reply',reply_card},
         Class="card border-0 bg-light mb-2",
         style="max-width: 100%;",
     )
 
 
-def AdminProductDetailCard(product=None) -> DIV:
+def AdminProductDetailCard() -> Frag:
     """
     Admin Detail Card following the Product model structure.
     Uses flat argument structure to avoid rendering/fetching errors.
     """
     # Create URLs using Django reverse
-    if not product:
-        return DIV("No product data available.", Class="alert alert-warning")
-    edit_url = reverse(
-        "product:admin-product-detail", kwargs={"product_id": product.id}
-    )  # Adjust name if needed
-    has_vars = product.variants.all()
-    if has_vars:
-        variants = DIV(
-            H5('Variants'),
-            *[AdminProductVariantDetailCard(pv) for pv in product.variants.all()],
-            Class='row'
-        )
-    return DIV(
+    def product_detail(**dvars):
+        product=dvars.get('product')
+        if not product:
+            return DIV("No product data available.", Class="alert alert-warning")
+        edit_url = reverse(
+            "product:admin-product-detail", kwargs={"product_id": product.id}
+        )  # Adjust name if needed
+        has_vars = product.variants.all()
+        if has_vars:
+            variants = DIV(
+                H5('Variants'),
+                *[Frag(AdminProductVariantDetailCard(),data_pipeline={'variant':pv}) for pv in product.variants.all()],
+                Class='row'
+            )
+        else:
+            variants=Frag()
+        return DIV(
         # Header Section
         DIV(
             H5(product.name, Class="mb-1 fw-bold"),
             SPAN("Featured", Class="badge bg-warning text-dark") if product.is_featured else "",
             Class="d-flex justify-content-between align-items-start mb-2"
         ),
-        
+
         # Identity Row (Reference & SKU)
         DIV(
             SMALL(f"REF: {product.reference_number or 'N/A'}", Class="text-muted font-monospace me-3"),
             SMALL(f"SKU: {product.sku}", Class="text-muted font-monospace"),
             Class="mb-3 border-bottom pb-2"
         ),
-        
+
         # Body (Description)
         P(product.short_description or "No short description provided.", Class="text-secondary small mb-3"),
-        
+
         # Categories Summary (Flat iteration)
         DIV(
             *[SPAN(cat.name, Class="badge border text-dark me-1 small") for cat in product.categories.all()[:3]],
             Class="mb-4"
         ),
-        
+
         # Action Footer
         DIV(
             A(
-                I(Class="fas fa-edit me-1"), "Edit Product", 
-                href=edit_url, 
+                I(Class="fas fa-edit me-1"), "Edit Product",
+                href=edit_url,
                 Class="btn btn-primary btn-sm flex-grow-1 me-2"
             ),
             Class="d-flex border-top pt-3",
             style="max-width: 300px;"
-            
+
         ),
         variants if has_vars else '',
-        
+
         Class="card shadow-sm p-3 mb-4 border-0",
         # style="max-width: 450px;"
     )
+    return Frag({'product',product_detail})

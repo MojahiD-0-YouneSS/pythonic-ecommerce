@@ -1,20 +1,16 @@
 from ui.pages.product.client.product_catalog import ProductCatalogPage
-from django.http import HttpResponse
-from django.views import View
-from apps.global_context import get_global_context
 from apps.product.dependencies import get_product_app_dependency
 from django.forms.models import model_to_dict
 from apps.product.services.model_service import ProductVariantModelService
-from apps.product.models import ProductImage, ProductVariant
+from apps.product.models import ProductImage
 from django.middleware.csrf import get_token
 from django.http import HttpResponse
 from django.views import View
 from ui.pages.product.client.product_detail import ProductDetailPage
-
+from probo.components import frag,Frag
 
 class ProductCatalogView(View):
     _dependency = get_product_app_dependency()
-    _ctx = get_global_context()
     def get(self, request):
         # 1. Fetch products from the database (for now, we'll use dummy data)
         def process_item(item):
@@ -31,22 +27,30 @@ class ProductCatalogView(View):
                 }
             )
             return obj_dict
-        categpries = self._dependency.select_category.model_class.objects.filter(is_active=True)
+        from django.core.paginator import Paginator
+        categories = self._dependency.select_category.model_class.objects.filter(is_active=True)
+        queryset = self._dependency.select_product_variant.model_class.objects.filter(is_active=True).order_by('-id')
+        
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(queryset, 12)
+        page_obj = paginator.get_page(page_number)
+        
         products = [
             process_item(item)
-            for item in self._dependency.select_product_variant.model_class.objects.filter(
-                is_active=True
-            )
+            for item in page_obj.object_list
         ]
-        # 2. Create the Product Catalog Page with the fetched products
-        page = ProductCatalogPage(products=products, categpries=categpries)
 
-        # 3. Render the page and return as HttpResponse
-        rendered_page = page.render()
-        return HttpResponse(rendered_page)
+        page = ProductCatalogPage(products=products, categories=categories)
+        page.page_obj = page_obj
+        
+        query_dict = request.GET.copy()
+        if 'page' in query_dict:
+            del query_dict['page']
+        page.query_string = query_dict.urlencode()
+        
+        return HttpResponse(frag(page,))
 
 class ProductDetailView(View):
-    __ctx = get_global_context()
     def get(self, request, product_id,*args, **kwargs):
         product_variant_service = ProductVariantModelService(
             session_key=request.session.session_key,id=product_id
@@ -57,7 +61,8 @@ class ProductDetailView(View):
         product['id'] =product_variant_service.db_record.id
         product["features"] = product_variant_service.db_record.product.variants.all()
         product['image_url']=ProductImage.objects.get(variant=product_variant_service.db_record).image
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put("csrf_token", get_token(request))
-            ui = ProductDetailPage(product)
-            return HttpResponse(ui.render())
+            ctx.put("product", product)
+            ui = ProductDetailPage()
+            return HttpResponse(frag(Frag(ui, data_pipeline=ctx)))

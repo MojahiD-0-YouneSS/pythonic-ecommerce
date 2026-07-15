@@ -1,8 +1,8 @@
-from probo import DIV, NAV, A, BUTTON, INPUT, SPAN, UL, LI, FOOTER, P, I 
+from probo import DIV, NAV, A, BUTTON, INPUT, SPAN, UL, LI, FOOTER, P, I
 from django.urls import reverse
 from ui.components.cart.icon import cart_icon
 
-def ClientHeader(cart_count=0,user_status=None,is_admin=False) -> NAV:
+def ClientHeader() -> NAV:
 
     return NAV(
         DIV(
@@ -36,54 +36,35 @@ def ClientHeader(cart_count=0,user_status=None,is_admin=False) -> NAV:
                         ),
                         Class="nav-item",
                     ),
-                    (
-                        str()
-                        if (user_status and not is_admin)
-                        or not user_status
-                        and not is_admin
-                        else A(
+                    {'user_auth', 'is_admin', lambda **dvars: (
+                        str() if (dvars.get('user_auth') and not dvars.get('is_admin')) or not dvars.get('user_auth') and not dvars.get('is_admin') else A(
                             "Dashboard",
                             href=reverse("cms:admin-dashboard", kwargs={}),
                             Class="nav-link",
                         )
-                    ),
-                    (
+                    )},
+                    {'user_auth', lambda **dvars: (
                         LI(
-                            (
-                                A(
-                                    "Profile",
-                                    href=reverse("client:profile_base", kwargs={}),
-                                    Class="nav-link",
-                                )
+                            A(
+                                "Profile",
+                                href=reverse("client:profile_base", kwargs={}),
+                                Class="nav-link",
+                            ),
+                            Class="nav-item",
+                        ) if dvars.get('user_auth') else str()
+                    )},
+                    {'user_auth', lambda **dvars: (
+                        LI(
+                            A(
+                                "Logout" if dvars.get('user_auth') else "Log in",
+                                href=reverse("client:logout") if dvars.get('user_auth') else reverse("client:login"),
+                                Class="nav-link",
                             ),
                             Class="nav-item",
                         )
-                        if user_status
-                        else str()
-                    ),
+                    )},
                     LI(
-                        A(
-                            "Logout" if user_status else "Log in",
-                            href=(
-                                reverse(
-                                    f"client:login",
-                                )
-                                if not user_status
-                                else "#"
-                            ),
-                            hx_post=(
-                                reverse(
-                                    f"client:logout",
-                                )
-                                if user_status
-                                else False
-                            ),
-                            Class="nav-link",
-                        ),
-                        Class="nav-item",
-                    ),
-                    LI(
-                        cart_icon(cart_count),
+                        cart_icon(),
                         Class="nav-item ms-lg-3",
                     ),
                     Class="navbar-nav ms-auto align-items-center",

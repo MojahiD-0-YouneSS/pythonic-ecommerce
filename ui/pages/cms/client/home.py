@@ -1,4 +1,5 @@
 from probo import DIV, H2, P
+from probo.components import Frag
 from ui.components.cms.banner import HeroBanner
 from ui.components.cms.home_components import (
     RenderAboutUs,
@@ -37,7 +38,7 @@ class HomePage:
                     H2("Trending Now", Class="fw-bolder mb-4"),
                     DIV(
                         # List comprehension to generate the grid!
-                        *[ProductCard(prod) for prod in self.featured_products],
+                        *[Frag(ProductCard(), data_pipeline={'product': prod}) for prod in self.featured_products],
                         Class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center"
                     ),
                     Class="container px-4 px-lg-5 mt-5"

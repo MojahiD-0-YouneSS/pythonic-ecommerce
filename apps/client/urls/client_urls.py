@@ -36,9 +36,5 @@ client_urlpatterns = [
     # --- Shopping History Endpoints ---
     # GET (read)
     path("history/", crud_views.ShoppingHistoryView.as_view(), name="history_list"),
-    path(
-        "history/<int:id>/",
-        crud_views.ShoppingHistoryView.as_view(),
-        name="history_detail",
-    ),
+    
 ]

@@ -13,8 +13,7 @@ from ui.components.cart.cart_summary import CartSummaryCard
 from ui.components.cart.cart_item import CartItemTable
 from ui.components.messaging import get_messages
 from django.contrib import messages
-from apps.global_context import get_global_context
-from probo.components import frag
+from probo.components import frag, Frag
 # Import the Orchestrator!
 from apps.checkout.services.checkout_service import CheckoutOrchestrator
 
@@ -23,7 +22,6 @@ class ProcessCheckoutView(View):
     """
     HTMX Endpoint that triggers the entire Checkout sequence.
     """
-    __ctx = get_global_context()
     def post(self, request, *args, **kwargs):
         # 1. Ensure Session exists
         if not request.session.session_key:
@@ -57,34 +55,35 @@ class ProcessCheckoutView(View):
                 total_items = success.service_data.get('total_items')
                 cart_items = success.service_data.get('cart_items')
                 # Render the Success Receipt Component
-                self.__ctx.put("cart_item_count",total_items)
-                ui = OrderSuccessReceipt(order=order, checkout_session=checkout_obj)
-                summary_ui = CartSummaryCard(cart=cart,hx_oob=True)
-                cart_icon_ui = cart_icon(total_items, hx_oob=True)
-                messages.success(request=request,message="Operation is Proccessed SmoOothly!!")
-                message_ui = get_messages(messages=messages.get_messages(request=request),hx_oob=True)
+                with request.ui_context as ctx:
+                    ctx.put("cart_item_count",total_items)
+                    ctx.push(**success.service_data)
+                    ui = OrderSuccessReceipt()
+                    summary_ui = CartSummaryCard()
+                    cart_icon_ui = cart_icon()
+                    messages.success(request=request,message="Operation is Processed SmoOothly!!")
+                    ctx.put('django_messages',messages.get_messages(request=request))
+                    ctx.put('hx_oob','true')
+                    message_ui = get_messages()
 
-                items_table_ui = CartItemTable(cart_items, hx_oob=True)
-                return HttpResponse(
-                    frag(ui, cart_icon_ui, summary_ui, message_ui, items_table_ui,)
-                )
+                    items_table_ui = CartItemTable()
+                    return HttpResponse(
+                        frag(Frag(ui, cart_icon_ui, summary_ui, message_ui, items_table_ui,data_pipeline=ctx))
+                    )
             else:
                 # If it failed silently without an exception
-                ui = CheckoutError(
-                    "Something went wrong processing your order. Please try again."
-                )
-                return HttpResponse(ui.render())
+                ui = CheckoutError()
+                ui.load_data({'error_message':"Something went wrong processing your order. Please try again."})
+                return HttpResponse(frag(ui))
 
         except ValidationError as e:
             # Catch specific business logic errors (e.g., "Cannot checkout empty cart")
-            ui = CheckoutError(
-                str(e.message if hasattr(e, "message") else e.messages[0])
-            )
-            return HttpResponse(ui.render())
+            ui = CheckoutError()
+            ui.load_data({'error_message':str(e.message if hasattr(e, "message") else e.messages[0])})
+            return HttpResponse(frag(ui))
 
         except Exception as e:
             # Catch DB crashes or other fatal errors
-            ui = CheckoutError(
-                "A critical system error occurred. You have not been charged."
-            )
-            return HttpResponse(ui.render())
+            ui = CheckoutError()
+            ui.load_data({'error_message':"A critical system error occurred. You have not been charged."})
+            return HttpResponse(frag(ui))

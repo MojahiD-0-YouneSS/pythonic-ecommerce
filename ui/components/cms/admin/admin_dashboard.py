@@ -1,4 +1,5 @@
 from probo import DIV, H3, H4, H5, H6, P, SPAN, I, A, CANVAS, SCRIPT, SMALL,SVG, G, POLYLINE, POLYGON, RECT, TEXT, LINE
+from probo.components import Frag
 from apps.global_context import get_global_context
 import json
 
@@ -115,36 +116,37 @@ def ChartCard(title, svg_component):
         Class="card shadow-sm border-0 p-4 h-100"
     )
 
-def ReviewRow(review):
+def ReviewRow():
     """Single review item"""
-    stars = [I(Class="bi bi-star-fill text-warning smaller") for _ in range(review['rating'])]
-    stars += [I(Class="bi bi-star text-warning smaller") for _ in range(5 - review['rating'])]
-    
     return DIV(
         DIV(
-            DIV(*stars, Class="mb-1"),
-            SPAN(review['time'], Class="text-muted smaller ms-auto"),
+            DIV(
+                {'review.rating', lambda **dvars: DIV(*[I(Class="bi bi-star-fill text-warning smaller") for _ in range(dvars.get('review.rating'))] + [I(Class="bi bi-star text-warning smaller") for _ in range(5 - dvars.get('review.rating'))])},
+                Class="mb-1"
+            ),
+            SPAN({'review.time'}, Class="text-muted smaller ms-auto"),
             Class="d-flex justify-content-between align-items-center"
         ),
-        H6(review['customer'], SPAN(f" on {review['product']}", Class="text-muted fw-normal"), Class="mb-1 small fw-bold"),
-        P(f'"{review["text"]}"', Class="text-muted smaller mb-0 fst-italic"),
+        H6({'review.customer'}, SPAN({'review.product', lambda **dvars: f" on {dvars.get('review.product')}"}, Class="text-muted fw-normal"), Class="mb-1 small fw-bold"),
+        P({'review.text', lambda **dvars: f'"{dvars.get("review.text")}"'}, Class="text-muted smaller mb-0 fst-italic"),
         Class="border-bottom py-3 last-border-0"
     )
 
-def HotProductRow(product):
+def HotProductRow():
     """Single hot product item"""
-    trend_color = "success" if product['trend'] == "up" else "danger"
-    trend_icon = "bi-arrow-up-right" if product['trend'] == "up" else "bi-arrow-down-right"
-
     return DIV(
         DIV(
-            H6(product['name'], Class="mb-1 small fw-bold text-truncate", style="max-width: 200px;"),
-            SMALL(f"{product['sales']} sold", Class="text-muted smaller"),
+            H6({'product.name'}, Class="mb-1 small fw-bold text-truncate", style="max-width: 200px;"),
+            SMALL({'product.sales', lambda **dvars: f"{dvars.get('product.sales')} sold"}, Class="text-muted smaller"),
             Class="flex-grow-1"
         ),
         DIV(
-            SPAN(product['revenue'], Class="d-block small fw-bold text-end"),
-            SPAN(I(Class=f"bi {trend_icon} me-1"), product['pct'], Class=f"smaller text-{trend_color} fw-bold float-end"),
+            SPAN({'product.revenue'}, Class="d-block small fw-bold text-end"),
+            SPAN(
+                I(Class={'product.trend', lambda **dvars: f"bi {'bi-arrow-up-right' if dvars.get('product.trend') == 'up' else 'bi-arrow-down-right'} me-1"}), 
+                {'product.pct'}, 
+                Class={'product.trend', lambda **dvars: f"smaller text-{'success' if dvars.get('product.trend') == 'up' else 'danger'} fw-bold float-end"}
+            ),
             Class="text-end"
         ),
         Class="d-flex align-items-center border-bottom py-3 last-border-0"
@@ -205,7 +207,7 @@ def get_admin_dashboard(*args,**kwargs):
                 DIV(
                     H6("HOT PRODUCTS", Class="text-muted text-uppercase fw-bold mb-3 smaller"),
                     DIV(
-                        *[HotProductRow(p) for p in hot_products],
+                        *[Frag(HotProductRow(), data_pipeline={'product': p}) for p in hot_products],
                     ),
                     Class="card shadow-sm border-0 p-4 h-100"
                 ),
@@ -217,7 +219,7 @@ def get_admin_dashboard(*args,**kwargs):
                 DIV(
                     H6("RECENT REVIEWS", Class="text-muted text-uppercase fw-bold mb-3 smaller"),
                     DIV(
-                        *[ReviewRow(r) for r in reviews],
+                        *[Frag(ReviewRow(), data_pipeline={'review': r}) for r in reviews],
                     ),
                     DIV(
                         A("View All Reviews", href="/admin/reviews/", Class="btn btn-sm btn-outline-secondary w-100 mt-3"),

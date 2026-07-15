@@ -72,6 +72,7 @@ MIDDLEWARE = [
     "apps.client.middleware.activity_orchistration.EntryMiddleware",
     "apps.client.middleware.csrf_context.CsrfContextMiddleware",
     "apps.client.middleware.client_user_link.ClientUserBinderMiddleware",
+    "apps.middleware.HTMXErrorMiddleware",
 ]
 
 # AUTH_USER_MODEL = "client.User"

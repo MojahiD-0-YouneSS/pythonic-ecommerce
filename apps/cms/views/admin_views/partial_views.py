@@ -1,19 +1,14 @@
-from time import timezone
 from django.urls import reverse
 from django.views import View
-from probo.components import frag
+from probo.components import frag, Frag
 from probo.utility import ProboSourceString
 from apps.cms.dependencies import get_cms_app_dependency
-from apps.cms.forms.admin_forms.model_form import SystemBannerRotationForm
 from apps.utility import CustomAdminRequiredMixin
-from ui.components.cms.admin.dashboard_v2 import MediaAdminCard, render_media_grid
-from apps.global_context import get_global_context
+from ui.components.cms.admin.dashboard_v2 import MediaAdminCard
 from django.http import HttpResponse
-from django.utils import timezone
-from datetime import timedelta
 from django.contrib import messages
 from ui.components.messaging import get_messages
-from django_abstract.utilities import AdminOrStaffMixin, HtmxLoginRequiredMixin, to_snake_case
+from django_abstract.utilities import HtmxLoginRequiredMixin
 from apps.cms.forms.admin_forms.model_form import (
     QuoteForm,
 SystemBannerRotationForm,
@@ -28,6 +23,7 @@ PageVisitForm,
 DashboardMetricsForm,
 )
 from ui.components.shared.admin_form import AdminForm, FormConfirmation
+
 
 class HideMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
 
@@ -44,37 +40,30 @@ class HideMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, V
                 obj.is_deactivated = False # Ensure disabled is False when toggling active
                 obj.highlighted = obj.is_active
                 obj.save()
-                ui = MediaAdminCard(
-                    obj.title if hasattr(obj, "title") else obj.customer_name if hasattr(obj, "customer_name") else obj.name if hasattr(obj, "name") else "Untitled",
-                    obj.subtitle if hasattr(obj, "subtitle") else obj.description if hasattr(obj, "description") else obj.content if hasattr(obj, "content") else "No description",
-                    obj.image.url if hasattr(obj, "image") else obj.customer_image.url if hasattr(obj, "customer_image") else None,
-                    obj.is_active,
-                    obj_id=obj.id,
-                    slug=f"select_{to_snake_case(obj.__class__.__name__)}",
-                )
-                messages.success(
-                    request,
-                    f"{select_slug[7:].replace('_', ' ').capitalize()} {'Published' if obj.is_active else 'Hidden'} successfully.",
-                )
-                message = get_messages(messages=messages.get_messages(request),hx_oob=True)
-                return HttpResponse(frag(
-                    ui,
+                with request.ui_context as ctx:
+                    ui = MediaAdminCard()
+                    messages.success(
+                        request,
+                        f"{select_slug[7:].replace('_', ' ').capitalize()} {'Published' if obj.is_active else 'Hidden'} successfully.",
+                    )
+                    message = get_messages()
+                    ctx.push(obj=obj,django_messages=messages.get_messages(request),hx_oob='true')
+                    return HttpResponse(frag(Frag(
+                        ui,
+                        message,
+                    )))
+        with request.ui_context as ctx:
+            messages.error(request, f"{select_slug[7:].replace('_', ' ').capitalize()} not found.")
+            ctx.push(django_messages=messages.get_messages(request), hx_oob="true")
+            message = get_messages()
+            return HttpResponse(
+                frag(
+                    Frag(
                     message,
-                ))
-
-        messages.error(request, f"{select_slug[7:].replace('_', ' ').capitalize()} not found.")
-        message = get_messages(
-            messages=messages.get_messages(request), hx_oob=True
-            )
-        return HttpResponse(
-            frag(
-                message,
-            )
-        )
-
+                    data_pipeline=ctx,
+                )))
 
 class EditMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, View):
-    __ctx = get_global_context()
     def get_form_class(self, obj,instance=False):
         form_registry = {
             "Quote": QuoteForm,
@@ -101,23 +90,40 @@ class EditMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, V
                 form = self.get_form_class(obj, instance=True)
                 # Here you would implement the logic to edit the media object
                 # For demonstration, we'll just return a success message
-                messages.success(request, f"{select_slug[7:].replace('_', ' ').capitalize()} edit functionality is started.")
-                message = get_messages(messages=messages.get_messages(request), hx_oob=True)
-                form_modal = AdminForm(
-                    form=ProboSourceString(form),
-                    action="#",
-                    hx_post=reverse(
-                        "cms:admin-edit-media",
-                        kwargs={"slug": select_slug, "id": obj_id},
-                    ),
-                    hx_target="#admin-edit-modal-body",  # Swaps just this card!
-                    hx_swap="innerHTML",
-                )
-                return HttpResponse(frag(
-                    message,
-                    form_modal
-                ))
+                with request.ui_context as ctx:
+                    messages.success(request, f"{select_slug[7:].replace('_', ' ').capitalize()} edit functionality is started.")
+                    ctx.push(
+                        django_messages=messages.get_messages(request),
+                        hx_oob='true',
+                        rdt_form=ProboSourceString(form),
+                        action='#',
+                    )
+                    message = get_messages()
+                    form_modal = AdminForm()
+                    form_modal.attr_manager.set_bulk_attr(
+                        hx_post=reverse(
+                            "cms:admin-edit-media",
+                            kwargs={"slug": select_slug, "id": obj_id},
+                        ),
+                        hx_target="#admin-edit-modal-body",  # Swaps just this card!
+                        hx_swap="innerHTML",
+                    )
+                    return HttpResponse(frag(Frag(
+                        message,
+                        form_modal,
+                        data_pipeline=ctx
+                )))
+        with request.ui_context as ctx:
 
+            messages.error(request, f"{select_slug[7:].replace('_', ' ').capitalize()} not found.")
+            ctx.push(django_messages=messages.get_messages(request), hx_oob='true')
+
+            message = get_messages()
+            return HttpResponse(
+                frag(
+                   Frag(message,data_pipeline=ctx)
+                )
+            )
     def post(self, request, *args, **kwargs):
         select_slug, obj_id = kwargs.get("slug"), kwargs.get("id")
         cmsd = get_cms_app_dependency()
@@ -129,21 +135,23 @@ class EditMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin, V
                 if form.is_valid():
                     form.save()
                     messages.success(request, f"{select_slug[7:].replace('_', ' ').capitalize()} updated successfully.")
-                    message = get_messages(
-                        messages=messages.get_messages(request), hx_oob=True
-                    )
+                    message = get_messages()
+                    message.load_data({'django_messages': messages.get_messages(request), 'hx_oob': True})
                     form_modal = FormConfirmation()
                     return HttpResponse(frag(message, form_modal))
                 else:
                     messages.error(request, f"Error updating {select_slug[7:].replace('_', ' ').capitalize()}. Please check the form for errors.")
-                    message = get_messages(messages=messages.get_messages(request), hx_oob=True)
-                    form_modal = AdminForm(form=form,action=reverse("cms:admin-edit-media", kwargs={"slug":select_slug, "id":obj_id}))
+                    message = get_messages()
+                    message.load_data({'django_messages': messages.get_messages(request), 'hx_oob': True})
+                    form_modal = AdminForm()
+                    form_modal.load_data({'form': form, 'action': reverse("cms:admin-edit-media", kwargs={"slug":select_slug, "id":obj_id})})
                     return HttpResponse(frag(
                         message,
                         form_modal
                     ))              
         messages.error(request, " invalid arguments.")
-        message = get_messages(messages=messages.get_messages(request), hx_oob=True)
+        message = get_messages()
+        message.load_data({'django_messages': messages.get_messages(request), 'hx_oob': True})
         return HttpResponse(frag(
             message,
         ))
@@ -162,30 +170,28 @@ class DeleteMediaAdminCardView(HtmxLoginRequiredMixin, CustomAdminRequiredMixin,
                 obj.is_disabled = True # Toggle the disabled state
                 obj.is_deactivated = True # Toggle the deactivation state
                 obj.save()
-                ui = MediaAdminCard(
-                    obj.title if hasattr(obj, "title") else obj.customer_name if hasattr(obj, "customer_name") else obj.name if hasattr(obj, "name") else "Untitled",
-                    obj.subtitle if hasattr(obj, "subtitle") else obj.description if hasattr(obj, "description") else obj.content if hasattr(obj, "content") else "No description",
-                    obj.image.url if hasattr(obj, "image") else obj.customer_image.url if hasattr(obj, "customer_image") else None,
-                    obj.is_active,
-                    obj_id=obj.id,
-                    slug=f"select_{to_snake_case(obj.__class__.__name__)}",
-                )
-                messages.success(
-                    request,
-                    f"{select_slug[7:].replace('_', ' ').capitalize()} deleted successfully.",
-                )
-                message = get_messages(messages=messages.get_messages(request),hx_oob=True)
-                return HttpResponse(frag(
-                    ui,
-                    message,
-                ))
+                with request.ui_context as ctx:
+                    ctx.put('obj',obj)
+                    ui = MediaAdminCard()
+                    messages.success(
+                        request,
+                        f"{select_slug[7:].replace('_', ' ').capitalize()} deleted successfully.",
+                    )
+                    ctx.push(django_messages=messages.get_messages(request),hx_oob='true')
+                    message = get_messages()
+                    return HttpResponse(frag(Frag(
+                        ui,
+                        message,
+                        data_pipeline=ctx
+                    )))
+        with request.ui_context as ctx:
 
-        messages.error(request, f"{select_slug[7:].replace('_', ' ').capitalize()} not found.")
-        message = get_messages(
-            messages=messages.get_messages(request), hx_oob=True
+            messages.error(request, f"{select_slug[7:].replace('_', ' ').capitalize()} not found.")
+            ctx.push(django_messages=messages.get_messages(request), hx_oob='true')
+
+            message = get_messages()
+            return HttpResponse(
+                frag(
+                   Frag(message,data_pipeline=ctx)
+                )
             )
-        return HttpResponse(
-            frag(
-                message,
-            )
-        )

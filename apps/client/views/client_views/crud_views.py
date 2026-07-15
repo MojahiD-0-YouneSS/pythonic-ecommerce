@@ -2,7 +2,6 @@ from django.views import View
 from django.shortcuts import redirect
 from django.http import JsonResponse, HttpResponse
 from apps.client.systems.system import ClientSystem
-from apps.global_context import get_global_context
 from ui.pages.client.client.auth import LoginPage, SignupPage
 from ui.pages.client.client.profile import (
     ClientProfilePage,
@@ -15,8 +14,10 @@ from ui.components.client.profile import (
     )
 from django.middleware.csrf import get_token
 from django.urls import reverse
-from django.forms.models import model_to_dict
+from probo.components import frag, Frag
 from probo.request import RequestDataTransformer
+from django.contrib import messages
+from ui.components.messaging import get_messages
 from django_abstract.utilities import Entry
 
 def execute_client_flow(request, service, method, include_request=False, **kwargs):
@@ -31,8 +32,6 @@ def execute_client_flow(request, service, method, include_request=False, **kwarg
 
     if kwargs:
         request.django_abstract_entry.service_entry_data.service_data.update(kwargs)
-    # ClientSystem()
-
     system = ClientSystem(entry=request.django_abstract_entry)
     success, entry = system.execute('client_operator')
 
@@ -58,30 +57,46 @@ def execute_client_flow(request, service, method, include_request=False, **kwarg
 # --- AUTH VIEWS ---
 
 class ClientLoginView(View):
-    __ctx = get_global_context()
     def get(self,request):
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put("csrf_token", get_token(request))
-            return HttpResponse(LoginPage().render())
+            ctx.put('django_messages', messages.get_messages(request))
+            page = LoginPage()
+            msg = get_messages()
+            return HttpResponse(frag(Frag(page,Frag(msg,data_pipeline={'hx_oob','true',}),data_pipeline=ctx)))
+
     def post(self, request, *args, **kwargs):
         rdt = RequestDataTransformer(request=request)
         payload = {
             "username_or_email": rdt.post_data.get("email"),
             "password": rdt.post_data.get('password'),
         }
-        return execute_client_flow(
+        response = execute_client_flow(
             request, "auth_service", "login_user",include_request=True, **payload
         )
+        if isinstance(response, JsonResponse) and response.status_code == 400:
+            import json
+            try:
+                error_data = json.loads(response.content)
+                errors = error_data.get("errors", {}).get("service", {})
+                error_msg = errors.get("auth", "Invalid credentials.") or "Login failed."
+            except:
+                error_msg = "Invalid credentials."
+            messages.error(request, error_msg)
+            return redirect("client:login")
+        return response
 
 class ClientSignupView(View):
-    __ctx = get_global_context()
 
     def get(self, request):
-        with self.__ctx as ctx:
+        with request.ui_context as ctx:
             ctx.put("csrf_token", get_token(request))
+            ctx.put('django_messages', messages.get_messages(request))
 
             page = SignupPage()
-            return HttpResponse(page.render())
+            msg = get_messages()
+
+            return HttpResponse(frag(Frag(page, Frag(msg, data_pipeline={'hx_oob', 'true', }), data_pipeline=ctx)))
 
     def post(self, request, *args, **kwargs):
         # Assumes create_entry handles registration in ClientModelService
@@ -98,11 +113,23 @@ class ClientSignupView(View):
                              
                              },
         }
-        return execute_client_flow(request, "auth_service", "register_user", **payload)
+        response = execute_client_flow(request, "auth_service", "register_user", include_request=True, **payload)
+        if isinstance(response, JsonResponse) and response.status_code == 400:
+            import json
+            try:
+                error_data = json.loads(response.content)
+                errors = error_data.get("errors", {}).get("service", {})
+                error_msg = list(errors.values())[0] if errors else "Registration failed."
+            except:
+                error_msg = "Registration failed."
+            messages.error(request, error_msg)
+            return redirect("client:signup")
+        return response
 
 class ClientLogoutView(View):
+    def get(self, request, *args, **kwargs):
+        return execute_client_flow(request, "auth_service", "logout_user", include_request=True)
     def post(self, request, *args, **kwargs):
-        # Assumes logout_client method in pure service
         return execute_client_flow(request, "auth_service", "logout_user", include_request=True)
 
 # --- PROFILE VIEWS ---
@@ -129,12 +156,12 @@ class ClientProfileView(View):
         system = ClientSystem(entry=entry)
         success, entry = system.execute('client_operator')
         if success:
-            ui = ClientProfilePage(
-                ProfileInfoSection(
-                    user_data=entry.service_entry_data.service_data,
-                )
-            )
-            return HttpResponse(ui.render())
+            with request.ui_context as ctx:
+
+                profile_section = ProfileInfoSection()
+                ctx.push(**{'user_data': entry.service_entry_data.service_data,'active_tab_html':profile_section})
+                ui = ClientProfilePage()
+                return HttpResponse(frag(Frag(ui, data_pipeline=ctx)))
         return redirect('client:login')
 
 
@@ -146,6 +173,10 @@ class ShoppingHistoryView(View):
 
     def get(self, request, *args, **kwargs):
         # Depending on your base service, this might be list_entries or read_entry
+        # kwargs.update({
+        #     "service_args": {"session_key": request.session.session_key,
+        #                      }}
+        # )
         return execute_client_flow(
-            request, "shopping_history_model_service", "read_entry", **kwargs
+            request, "shopping_history_model_service", "read_entry",**kwargs
         )

@@ -1,9 +1,9 @@
 from ui.pages.client.admin.client_listingns import AdminUserListingCard
-from ui.pages.client.admin.client_report import AdminUserDetailCard
 from ui.pages.client.admin.client_summary import UserManagementSummary
 from ui.pages.base import get_management_base_template
 from apps.global_context import get_global_context
 from probo import DIV, H4, P, H5
+from probo.components import Frag
 
 def ClientAdminDashboard():
     """
@@ -37,13 +37,13 @@ def ClientAdminDashboard():
             ),
             
             # Summary Metrics
-            UserManagementSummary(stats),
+            {'stats',lambda **dvars:DIV(UserManagementSummary(),data_pipeline=dvars,Class="row g-0 bg-white rounded shadow-sm border mb-5 overflow-hidden",)},
             
             # Listing Grid
             DIV(
                 H5("All Active Clients", Class="mb-3"),
                 DIV(
-                    *[AdminUserListingCard(client) for client in (clients if clients else [None])],
+                    *[Frag(AdminUserListingCard(), data_pipeline={'client': c}) for c in clients],
                     Class="d-flex flex-wrap gap-3"
                 ),
                 Class="p-4 bg-white border rounded shadow-sm"

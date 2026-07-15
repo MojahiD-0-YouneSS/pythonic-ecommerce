@@ -1,0 +1,163 @@
+/* 
+ * Premium Aesthetic Overrides 
+ * Builds on top of style.css and standard Bootstrap 5.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Global Typography & Background */
+body {
+    font-family: 'Inter', sans-serif !important;
+    background: #f4f7f6; /* Fallback */
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    background-attachment: fixed;
+    color: #2c3e50;
+}
+
+/* Glassmorphism Cards */
+.card {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 16px !important; /* Slightly more rounded */
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.12) !important;
+}
+
+/* Make headers inside cards glass-like too */
+.card-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.card-footer {
+    background: transparent !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Premium Buttons */
+.btn {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3) !important;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+.btn-light {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+.btn-light:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    transform: translateY(-2px);
+}
+
+/* Table Enhancements */
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table {
+    background: transparent !important;
+    --bs-table-bg: transparent;
+}
+
+.table-light th {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(5px);
+    color: #555 !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease;
+    box-shadow: none !important;
+}
+
+.form-control:focus, .form-select:focus {
+    background: #fff !important;
+    border-color: #764ba2 !important;
+    box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.2) !important;
+}
+
+/* Badges */
+.badge {
+    padding: 0.5em 0.8em !important;
+    border-radius: 6px !important;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+/* Dropdown Menus */
+.dropdown-menu {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    padding: 8px;
+}
+
+.dropdown-item {
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: rgba(118, 75, 162, 0.08) !important;
+    color: #764ba2 !important;
+}

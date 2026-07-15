@@ -5,7 +5,6 @@ from ui.pages.base import get_management_base_template
 
 
 def SiteContentPage():
-    __ctx = get_global_context()
     base =  get_management_base_template()
     base_title = base.html_doc.find(lambda n:n.tag == "TITLE")
     if base_title:
@@ -14,5 +13,5 @@ def SiteContentPage():
         lambda n: n.attr_manager.get_attr("data_ssdom_id") == "root-container"
     )
     if base_body:
-        base_body.add(SiteContentDashboard(__ctx))
+        base_body.add(SiteContentDashboard())
     return base

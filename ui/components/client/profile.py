@@ -18,20 +18,18 @@ from probo import (
     A,
     FIELDSET,
 )
-from ui.components.crf_token import CsrfToken
 from django.urls import reverse
 
-def ProfileInfoSection(user_data=None,is_disabled=True) -> DIV:
+def ProfileInfoSection() -> DIV:
     """
     Renders the Personal Information form.
     Allows the user to update their name and phone number.
     """
-    user = user_data or {}
-    return DIV(
-        DIV(
-            H4("Personal Information", Class="card-title fw-bold mb-4"),
-            FORM(
-                FIELDSET(
+    def profile_info_section(**dvars) -> FIELDSET:
+        user = dvars.get('user_data',{}) or {}
+        is_disabled = dvars.get('is_disabled',True)
+
+        return FIELDSET(
                     DIV(
                         DIV(
                             LABEL("First Name", Class="form-label text-muted small"),
@@ -80,7 +78,12 @@ def ProfileInfoSection(user_data=None,is_disabled=True) -> DIV:
                         Class="mb-4",
                     ),
                     disabled=is_disabled,
-                ),
+                )
+    return DIV(
+        DIV(
+            H4("Personal Information", Class="card-title fw-bold mb-4"),
+            FORM(
+                {'user','is_disabled',profile_info_section},
                 BUTTON("Save Changes", Type="submit", Class="btn btn-dark px-4"),
                 BUTTON(
                     "Edit Info",
@@ -102,115 +105,118 @@ def ProfileInfoSection(user_data=None,is_disabled=True) -> DIV:
     )
 
 
-def OrderHistorySection(orders=None) -> DIV:
+def OrderHistorySection() -> DIV:
     """
     Renders the Order History table.
     """
-    if not orders:
-        return DIV(
-            DIV(
-                I(Class="bi bi-box-seam display-4 text-muted mb-3 d-block"),
-                H4("No orders yet", Class="fw-bold"),
-                P("When you place orders, they will appear here.", Class="text-muted"),
-                A("Start Shopping", href="/catalog/", Class="btn btn-primary mt-2"),
-                Class="text-center py-5",
-            ),
-            Class="card border-0 shadow-sm rounded-4 p-4",
-        )
+    def order_history_section(**dvars):
+        orders = dvars.get('orders',[]) or []
+        if not orders:
+            return DIV(
+                DIV(
+                    I(Class="bi bi-box-seam display-4 text-muted mb-3 d-block"),
+                    H4("No orders yet", Class="fw-bold"),
+                    P("When you place orders, they will appear here.", Class="text-muted"),
+                    A("Start Shopping", href="/catalog/", Class="btn btn-primary mt-2"),
+                    Class="text-center py-5",
+                ),
+                Class="card border-0 shadow-sm rounded-4 p-4",
+            )
 
-    order_rows = [
-        TR(
-            TD(SPAN(f"#{order.get('id', '')[:8]}", Class="font-monospace text-muted")),
-            TD(order.get("created_at", "-")),
-            TD(f"${order.get('total_amount', '0.00')}"),
-            TD(
-                SPAN(
-                    order.get("status", "Pending"),
-                    Class=f"badge bg-{'success' if order.get('status') == 'Delivered' else 'warning text-dark'}",
-                )
-            ),
-            TD(
-                A(
-                    "View Details",
-                    href=f"/client/orders/{order.get('id')}/",
-                    Class="btn btn-sm btn-outline-dark",
-                )
-            ),
-            Class="align-middle",
-        )
-        for order in orders
-    ]
-
+        order_rows = [
+            TR(
+                TD(SPAN(f"#{order.get('id', '')[:8]}", Class="font-monospace text-muted")),
+                TD(order.get("created_at", "-")),
+                TD(f"${order.get('total_amount', '0.00')}"),
+                TD(
+                    SPAN(
+                        order.get("status", "Pending"),
+                        Class=f"badge bg-{'success' if order.get('status') == 'Delivered' else 'warning text-dark'}",
+                    )
+                ),
+                TD(
+                    BUTTON(
+                        "View Details",
+                        hx_get=reverse('order:order_detail',kwargs={'order_id':order.get('id')}),
+                        hx_target="#profile-content-area",
+                        hx_swap="innerHTML",
+                        Class="btn btn-sm btn-outline-dark",
+                    )
+                ),
+                Class="align-middle",
+            )
+            for order in orders
+        ]
+        return TBODY(*order_rows)
     return DIV(
         DIV(
             H4("Order History", Class="card-title fw-bold mb-4"),
-            DIV(
-                TABLE(
-                    THEAD(
-                        TR(
-                            TH("Order ID"),
-                            TH("Date"),
-                            TH("Total"),
-                            TH("Status"),
-                            TH("Action"),
-                        ),
-                        Class="table-light",
-                    ),
-                    TBODY(*order_rows),
-                    Class="table table-hover mb-0",
+            TABLE(
+                THEAD(
+                    TR(
+                        TH("Order ID"),
+                        TH("Date"),
+                        TH("Total"),
+                        TH("Status"),
+                        TH("Action"),
+                        Class="text-muted small border-bottom",
+                    )
                 ),
-                Class="table-responsive",
+                {'orders',order_history_section},
+                Class="table table-hover align-middle mb-0",
             ),
-            Class="card-body p-4",
-        ),
-        Class="card border-0 shadow-sm rounded-4 overflow-hidden",
+            Class="card border-0 shadow-sm rounded-4 p-4",
+        )
     )
 
-
-def AddressBookSection(addresses=None,shipping_addresses=None) -> DIV:
+def AddressBookSection() -> DIV:
     """
     Renders a grid of saved addresses.
     """
-    address_cards = []
-    if addresses:
-        for addr in addresses:
-            address_cards.append(
-                DIV(
+    def address_book_section(**dvars):
+        addresses: list|None = dvars.get('addresses',None)
+        shipping_addresses = dvars.get('shipping_addresses',None)
+        address_cards = []
+        if addresses:
+            for addr in addresses:
+                address_cards.append(
                     DIV(
                         DIV(
-                            H4(
-                                "Default" if addr.get("is_default") else "Address",
-                                Class=f"badge {'bg-primary' if addr.get('is_default') else 'bg-secondary'} mb-2",
-                            ),
-                            P(addr.get("street_address", ""), Class="mb-1 fw-medium"),
-                            P(
-                                f"{addr.get('city', '')}, {addr.get('state', '')} {addr.get('zip_code', '')}",
-                                Class="text-muted small mb-0",
-                            ),
-                            P(addr.get("country", ""), Class="text-muted small mb-3"),
                             DIV(
-                                BUTTON(
-                                    "Edit",
-                                    Class="btn btn-sm btn-outline-secondary me-2",
+                                H4(
+                                    "Default" if addr.get("is_default") else "Address",
+                                    Class=f"badge {'bg-primary' if addr.get('is_default') else 'bg-secondary'} mb-2",
                                 ),
-                                BUTTON("Delete", Class="btn btn-sm btn-outline-danger"),
-                                BUTTON("Set as Shipping", Class="btn btn-sm btn-outline-primary ms-2"),
-                                Class="mt-auto",
+                                P(addr.get("street_address", ""), Class="mb-1 fw-medium"),
+                                P(
+                                    f"{addr.get('city', '')}, {addr.get('state', '')} {addr.get('zip_code', '')}",
+                                    Class="text-muted small mb-0",
+                                ),
+                                P(addr.get("country", ""), Class="text-muted small mb-3"),
+                                DIV(
+                                    BUTTON(
+                                        "Edit",
+                                        Class="btn btn-sm btn-outline-secondary me-2",
+                                    ),
+                                    BUTTON("Delete", Class="btn btn-sm btn-outline-danger"),
+                                    BUTTON("Set as Shipping", Class="btn btn-sm btn-outline-primary ms-2"),
+                                    Class="mt-auto",
+                                ),
+                                Class="card-body d-flex flex-column",
                             ),
-                            Class="card-body d-flex flex-column",
+                            Class="card h-100 border shadow-sm rounded-3",
                         ),
-                        Class="card h-100 border shadow-sm rounded-3",
-                    ),
-                    Class="col-md-6 mb-4",
+                        Class="col-md-6 mb-4",
+                    )
                 )
-            )
-    else:
-        address_cards = [
-            DIV(
-                P("You haven't saved any addresses yet.", Class="text-muted my-4"),
-                Class="col-12 text-center",
-            )
-        ]
+            return DIV(*address_cards, Class="row")
+        else:
+
+            return DIV(
+                    P("You haven't saved any addresses yet.", Class="text-muted my-4"),
+                    Class="col-12 text-center",
+                )
+
 
     return DIV(
         DIV(
@@ -226,22 +232,23 @@ def AddressBookSection(addresses=None,shipping_addresses=None) -> DIV:
                 ),
                 Class="d-flex justify-content-between align-items-center mb-4",
             ),
-            DIV(*address_cards, Class="row"),
+            {'addresses','shipping_addresses',address_book_section},
             Class="card-body p-4",
         ),
         Class="card border-0 shadow-sm rounded-4",
     )
 
 
-def SecuritySection(user_data=None, is_disabled=True,error=None) -> DIV:
+def SecuritySection() -> DIV:
     """
     Renders the password update form.
     """
-    return DIV(
-        DIV(
-            H4("Security & Password", Class="card-title fw-bold mb-4"),
-            FORM(
-                FIELDSET(
+    def security_section(**dvars):
+        user_data = dvars.get('user_data', None)
+        is_disabled = dvars.get('is_disabled', True)
+        error = dvars.get('error', None)
+
+        return FIELDSET(
                     DIV(
                         LABEL("Current Password", Class="form-label text-muted small"),
                         INPUT(
@@ -263,7 +270,7 @@ def SecuritySection(user_data=None, is_disabled=True,error=None) -> DIV:
                             required=True,
                         ),
                         Class="mb-3",
-                        
+
                     ),
                     DIV(
                         LABEL(
@@ -279,7 +286,12 @@ def SecuritySection(user_data=None, is_disabled=True,error=None) -> DIV:
                         Class="mb-4",
                     ),
                     disabled=bool(is_disabled),
-                ),
+                )
+    return DIV(
+        DIV(
+            H4("Security & Password", Class="card-title fw-bold mb-4"),
+            FORM(
+                {'user_data','is_disabled','error',security_section},
                 BUTTON(
                     "Update Password",
                     Type="submit",
@@ -311,11 +323,19 @@ def SecuritySection(user_data=None, is_disabled=True,error=None) -> DIV:
     )
 
 
-def ClientProfile(*active_tab_html):
+def ClientProfile():
     """
     The master layout for the profile page.
     The left sidebar controls navigation. The right side swaps content via HTMX.
     """
+    def active_tab_html(**dvars):
+        active_html = dvars.get('active_tab_html')
+        return DIV(
+                # This inner HTML gets replaced when sidebar links are clicked!
+                active_html,
+                Id="profile-content-area",
+                Class="col-md-9",
+            )
     return DIV(
         DIV(
             # --- LEFT SIDEBAR ---
@@ -363,12 +383,7 @@ def ClientProfile(*active_tab_html):
                 Class="col-md-3 mb-4",
             ),
             # --- RIGHT CONTENT AREA (HTMX TARGET) ---
-            DIV(
-                # This inner HTML gets replaced when sidebar links are clicked!
-                *active_tab_html,
-                Id="profile-content-area",
-                Class="col-md-9",
-            ),
+            {'active_tab_html',active_tab_html},
             Class="row mt-5",
         ),
         Class="container",

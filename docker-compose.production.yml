@@ -21,8 +21,8 @@ services:
       - postgres
       - redis
     env_file:
-      - ./.envs/.production/.django
-      - ./.envs/.production/.postgres
+      - ./devops/.envs/.production/.django
+      - ./devops/.envs/.production/.postgres
     command: /start
 
   postgres:
@@ -34,7 +34,7 @@ services:
       - production_postgres_data:/var/lib/postgresql/data
       - production_postgres_data_backups:/backups
     env_file:
-      - ./.envs/.production/.postgres
+      - ./devops/.envs/.production/.postgres
 
   traefik:
     build:
@@ -67,10 +67,10 @@ services:
     image: pythonic_ecommerce_app_production_celerybeat
     command: /start-celerybeat
 
-  flower:
-    <<: *django
-    image: pythonic_ecommerce_app_production_flower
-    command: /start-flower
+  # flower:
+  #   <<: *django
+  #   image: pythonic_ecommerce_app_production_flower
+  #   command: /start-flower
 
   nginx:
     build:

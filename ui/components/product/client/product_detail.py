@@ -1,20 +1,17 @@
 from probo import DIV, H2, H4, IMG, P, I, BUTTON, INPUT
-from apps.global_context import get_global_context
 from django.urls import reverse
 from ui.components.crf_token import CsrfToken
-def ProductDetail(product=None):
-    Context = get_global_context()  # Get global context for things like user info, cart count, etc.
+def ProductDetail():
+    def product_detail(**dvars):
+        product = dvars.get('product')
 
-    """Single Product Detail Page with Add to Cart HTMX logic."""
-    product = product or Context.get("product_detail")
-    is_out_of_stock = product["stock"] == 0
-    if not product:
+        if not product:
+            return DIV(
+                H2("Product Not Found", Class="text-center text-danger my-5"),
+                Class="container py-5"
+            )
+        is_out_of_stock = product["stock"] == 0
         return DIV(
-            H2("Product Not Found", Class="text-center text-danger my-5"),
-            Class="container py-5"
-        )
-    return DIV(
-        DIV(
             # Left Column: Big Image
             DIV(
                 IMG(
@@ -110,4 +107,4 @@ def ProductDetail(product=None):
             ),
             Class="row container mx-auto my-5",
         )
-    )
+    return DIV({'product',product_detail})

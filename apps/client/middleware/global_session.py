@@ -1,5 +1,4 @@
-from apps.global_context import get_global_context
-
+from probo.context import ProboContextProvider
 
 class GlobalSessionMiddleware:
     """
@@ -21,10 +20,11 @@ class GlobalSessionMiddleware:
         # Note: If your global context is a true Singleton, be careful with
         # concurrent requests in production overriding this.
         # For a portfolio demo/local dev, this is perfectly fine.
-        global_ctx = get_global_context()
+        global_ctx = ProboContextProvider()
         global_ctx.put("session_key", session_key)
         global_ctx.put("user_auth", request.user.is_authenticated)
-
+        global_ctx.put("is_admin", request.user.is_staff)
+        request.ui_context = global_ctx
         # Optionally, you can attach it directly to the request object
         # if your services prefer extracting it from there.
         # request.dja_session_key = session_key
